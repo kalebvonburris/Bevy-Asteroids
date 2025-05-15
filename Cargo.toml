@@ -1,0 +1,63 @@
+# Tempated from https://github.com/TheBevyFlock/bevy_new_2d
+
+[package]
+name = "asteroids"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bevy = { version = "0.16.0", default-features = false, features = [
+    "bevy_color", "bevy_sprite", "bevy_window", "multi_threaded", "x11", "bevy_audio", "wav", "mp3"
+]}
+rand = { version = "0.9.1", default-features = false, features = ["std_rng", "thread_rng"] }
+blake3 = { version = "1.5", default-features = false, features = [ "pure" ] }
+bevy_embedded_assets = { version = "0.13.0", default-features = false }
+bevy_kira_audio = { version = "0.23.0", default-features = false, features = ["wav", "mp3"] }
+
+# Run `cargo build --no-default-features` to build without dynamic linking.
+[features]
+default = ["bevy/dynamic_linking"]
+
+
+# Compile with Performance Optimizations:
+# <https://bevyengine.org/learn/quick-start/getting-started/setup/#compile-with-performance-optimizations>
+
+# Enable a small amount of optimization in the dev profile.
+[profile.dev]
+opt-level = 1
+
+# Enable a large amount of optimization in the dev profile for dependencies.
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.release]
+opt-level = 'z'
+# Compile the entire crate as one unit.
+# Slows compile times, marginal improvements.
+codegen-units = 1
+# Do a second optimization pass over the entire program, including dependencies.
+# Slows compile times, marginal improvements.
+lto = true
+# Strips all debugging information from the binary to slightly reduce file size.
+# This is the default for release builds, but we set it here to be explicit.
+strip = true
+# Use abort to reduce binary size.
+panic = "abort"
+debug = false
+
+[profile.release.package."*"]
+opt-level = 'z'
+strip = true
+debug = false
+debug-assertions = false
+overflow-checks = false
+
+# This profile will be used for `bevy run web` automatically
+[profile.web-release]
+# Default to release profile values.
+inherits = "release"
+# Optimize with size in mind (also try "z", sometimes it is better).
+# Slightly slows compile times, great improvements to file size and runtime performance.
+opt-level = "s"
+# Strip all debugging information from the binary to slightly reduce file size.
+strip = "debuginfo"
