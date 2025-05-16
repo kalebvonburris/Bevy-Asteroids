@@ -33,6 +33,7 @@ impl Plugin for AsteroidsPlugin {
         // Setup default plugins
         let mut default_plugins = DefaultPlugins.set(WindowPlugin {
                 primary_window: Some(Window {
+                    title: "Asteroids".to_string(),
                     fit_canvas_to_parent: true,
                     ..default()
                 }),
