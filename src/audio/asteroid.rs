@@ -13,10 +13,10 @@ pub fn destroy_asteroid(
     audio: &Res<AudioChannel<ExplosionChannel>>,
 ) {
     let sound = match size {
-        AsteroidSize::Large => "embedded://audio/asteroid_large_destruction.wav",
-        AsteroidSize::Medium => "embedded://audio/asteroid_medium_destruction.wav",
-        AsteroidSize::Small => "embedded://audio/asteroid_small_destruction.wav",
+        AsteroidSize::Large => "embedded://audio/asteroid_large_destruction.mp3",
+        AsteroidSize::Medium => "embedded://audio/asteroid_medium_destruction.mp3",
+        AsteroidSize::Small => "embedded://audio/asteroid_small_destruction.mp3",
     };
 
-    audio.play(asset_server.load(sound)).with_volume(0.8);
+    audio.play(asset_server.load(sound)).with_volume(0.75);
 }

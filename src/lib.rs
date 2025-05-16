@@ -6,7 +6,7 @@ pub mod audio;
 
 use asteroid::{check_asteroid_bounds, move_asteroids, spawn_asteroids};
 use audio::main_song::play_main_song;
-use bevy::{prelude::*, render::mesh::VertexAttributeValues};
+use bevy::{app::PanicHandlerPlugin, diagnostic::DiagnosticsPlugin, log::LogPlugin, prelude::*, render::mesh::VertexAttributeValues};
 use bevy_embedded_assets::EmbeddedAssetPlugin;
 use bevy_kira_audio::{AudioApp, AudioPlugin};
 use bullet::{check_bullet_bounds, check_bullet_collisions, move_bullets, setup_bullet};
@@ -30,7 +30,29 @@ impl Plugin for AsteroidsPlugin {
 
         app.add_systems(Startup, spawn_camera);
 
-        app.add_plugins((DefaultPlugins, EmbeddedAssetPlugin::default(), AudioPlugin));
+        // Setup default plugins
+        let mut default_plugins = DefaultPlugins.set(WindowPlugin {
+                primary_window: Some(Window {
+                    fit_canvas_to_parent: true,
+                    ..default()
+                }),
+                ..default()
+            });
+
+        if !cfg!(debug_assertions) {
+            default_plugins = default_plugins.disable::<LogPlugin>();
+        }
+
+        // Disable unnecessary plugins
+        default_plugins = default_plugins
+            .disable::<PanicHandlerPlugin>()
+            .disable::<DiagnosticsPlugin>();
+
+        app.add_plugins((
+            default_plugins,
+            EmbeddedAssetPlugin::default(),
+            AudioPlugin
+        ));
 
         // Add audio channels
         app.add_audio_channel::<channels::LaserChannel>();

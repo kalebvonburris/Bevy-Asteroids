@@ -6,7 +6,8 @@ use crate::asteroid::{
 };
 
 use crate::audio::bullet::fire_bullet;
-use crate::audio::channels::LaserChannel;
+use crate::audio::channels::{ExplosionChannel, LaserChannel};
+use crate::audio::ship::*;
 use crate::bullet::{Bullet, BulletConfig};
 use crate::explosion::{ExplosionConfig, create_explosion};
 use crate::{lines_intersect, mesh_and_transform_to_points};
@@ -87,6 +88,8 @@ pub fn check_ship_collisions(
     explosion_config: Res<ExplosionConfig>,
     time: Res<Time>,
     meshes: Res<Assets<Mesh>>,
+    asset_server: Res<AssetServer>,
+    audio: Res<AudioChannel<ExplosionChannel>>,
 ) {
     for (player_entity, mut player_ship, ship_transform, ship_mesh) in ships.iter_mut() {
         for (asteroid_entity, asteroid, asteroid_transform, asteroid_mesh) in asteroids.iter() {
@@ -117,7 +120,7 @@ pub fn check_ship_collisions(
                             // Get the point of contact
                             let point_of_contact = Transform::from_translation(p.extend(-1.0));
 
-                            // Blow up the ship
+                            // Damage the ship
                             player_ship.health -= asteroid.size as i32;
 
                             if player_ship.health <= 0 {
@@ -135,6 +138,9 @@ pub fn check_ship_collisions(
                                     &time,
                                     false,
                                 );
+                                ship_destroyed(&asset_server, &audio);
+                            } else {
+                                ship_hit(&asset_server, &audio);
                             }
 
                             // Blow up the asteroid

@@ -9,5 +9,5 @@ pub fn fire_bullet(
     asset_server: &Res<AssetServer>,
     audio: &Res<AudioChannel<LaserChannel>>,
 ) {
-    audio.play(asset_server.load("embedded://audio/laser.wav")).with_volume(0.5);
+    audio.play(asset_server.load("embedded://audio/laser.mp3")).with_volume(0.35);
 }

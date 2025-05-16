@@ -7,17 +7,32 @@ edition = "2024"
 
 [dependencies]
 bevy = { version = "0.16.0", default-features = false, features = [
-    "bevy_color", "bevy_sprite", "bevy_window", "multi_threaded", "x11", "bevy_audio", "wav", "mp3"
+    "bevy_color", "bevy_scene", "bevy_sprite", "bevy_window", "multi_threaded", "x11", "bevy_audio", "mp3"
 ]}
 rand = { version = "0.9.1", default-features = false, features = ["std_rng", "thread_rng"] }
-blake3 = { version = "1.5", default-features = false, features = [ "pure" ] }
 bevy_embedded_assets = { version = "0.13.0", default-features = false }
-bevy_kira_audio = { version = "0.23.0", default-features = false, features = ["wav", "mp3"] }
+bevy_kira_audio = { version = "0.23.0", default-features = false, features = ["mp3"] }
+# Add kira to disable flags
+kira = { version = "0.10.6", default-features = false, features = ["wav", "mp3"] }
+# Logging
+log = { version = "0.4.27", features = ["max_level_debug", "release_max_level_off"] }
 
 # Run `cargo build --no-default-features` to build without dynamic linking.
 [features]
 default = ["bevy/dynamic_linking"]
 
+[target.'cfg(target_arch = "x86_64")'.dependencies]
+blake3 = { version = "1.5", default-features = false, features = [ "pure" ] }
+
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { version = "0.3.3", default-features = false, features = ["wasm_js"] }
+bevy = { version = "0.16.0", default-features = false, features = [
+    "bevy_color", "bevy_sprite", "bevy_window", "multi_threaded", "webgl2", "bevy_audio", "wav", "mp3"
+] }
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = ["-Oz", "--enable-mutable-globals"]
 
 # Compile with Performance Optimizations:
 # <https://bevyengine.org/learn/quick-start/getting-started/setup/#compile-with-performance-optimizations>
@@ -31,7 +46,7 @@ opt-level = 1
 opt-level = 3
 
 [profile.release]
-opt-level = 'z'
+opt-level = 3
 # Compile the entire crate as one unit.
 # Slows compile times, marginal improvements.
 codegen-units = 1
@@ -46,7 +61,7 @@ panic = "abort"
 debug = false
 
 [profile.release.package."*"]
-opt-level = 'z'
+opt-level = 3
 strip = true
 debug = false
 debug-assertions = false
