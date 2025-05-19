@@ -49,8 +49,9 @@ pub fn spawn_asteroids(
 ) {
     // Check if the time is right to spawn an asteroid
     // The longer the game is running, the more asteroids will spawn
-    let time_elapsed = (time.elapsed_secs() / 2.0) + 10.0;
-    let time_adjusted = time_elapsed.log10();
+    let log_base = 5.0;
+    let time_elapsed = (time.elapsed_secs() / 2.0) + log_base;
+    let time_adjusted = time_elapsed.log(log_base);
 
     let window = window.single().unwrap();
 

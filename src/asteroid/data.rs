@@ -7,9 +7,9 @@ pub const LARGE_PARAMETERS: (f32, f32, usize) = (40.0, 60.0, 30);
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum AsteroidSize {
-    Small = 5,
-    Medium = 15,
-    Large = 30,
+    Small = 15,
+    Medium = 30,
+    Large = 50,
 }
 
 #[derive(Component, Debug)]

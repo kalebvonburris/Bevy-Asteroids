@@ -32,7 +32,7 @@ pub fn setup_explosions(
     ))));
 
     let player_color = materials.add(ColorMaterial::from(Color::LinearRgba(LinearRgba::new(
-        1.0, 0.2, 0.2, 0.5,
+        1.0, 0.0, 0.0, 0.86,
     ))));
 
     // Create an explosion config
