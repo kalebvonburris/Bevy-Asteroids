@@ -1,9 +1,9 @@
+//! Systems for the player ship in the game.
+
 use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_kira_audio::AudioChannel;
 
-use crate::asteroid::{
-    Asteroid, AsteroidSize, LARGE_PARAMETERS, MEDIUM_PARAMETERS, SMALL_PARAMETERS,
-};
+use crate::asteroid::Asteroid;
 
 use crate::audio::bullet::fire_bullet;
 use crate::audio::channels::{ExplosionChannel, LaserChannel};
@@ -14,6 +14,16 @@ use crate::{lines_intersect, mesh_and_transform_to_points};
 
 use super::PlayerShip;
 
+/// Handles player input and movement, including shooting bullets.
+/// 
+/// # Arguments
+/// * `commands`: The `Commands` resource to spawn bullets.
+/// * `keyboard_input`: The `ButtonInput<KeyCode>` resource to check for player input
+/// * `query`: A query that retrieves the player ship's `PlayerShip` and its `Transform`.
+/// * `time`: The `Time` resource to calculate the movement delta.
+/// * `bullet_config`: The `BulletConfig` resource to configure the bullets.
+/// * `asset_server`: The `AssetServer` resource to load the bullet sound asset.
+/// * `audio`: The `AudioChannel<LaserChannel>` resource to play the bullet firing
 pub fn player_input_and_movement(
     mut commands: Commands,
     keyboard_input: Res<ButtonInput<KeyCode>>,
@@ -53,7 +63,12 @@ pub fn player_input_and_movement(
         // Shoot
         if keyboard_input.any_just_pressed([KeyCode::Space]) {
             // Spawn a bullet
-            Bullet::spawn_bullet(&mut commands.reborrow(), *transform, player_ship.speed, &bullet_config);
+            Bullet::spawn_bullet(
+                &mut commands.reborrow(),
+                *transform,
+                player_ship.speed,
+                &bullet_config,
+            );
             fire_bullet(&asset_server, &audio);
         }
     }
@@ -93,17 +108,13 @@ pub fn check_ship_collisions(
 ) {
     for (player_entity, mut player_ship, ship_transform, ship_mesh) in ships.iter_mut() {
         for (asteroid_entity, asteroid, asteroid_transform, asteroid_mesh) in asteroids.iter() {
-            let asteroid_radius = match asteroid.size {
-                AsteroidSize::Small => SMALL_PARAMETERS.1,
-                AsteroidSize::Medium => MEDIUM_PARAMETERS.1,
-                AsteroidSize::Large => LARGE_PARAMETERS.1,
-            };
+            let asteroid_diameter = asteroid.size.diameter();
 
             // Check if the ship is colliding with the asteroid
             if ship_transform
                 .translation
                 .distance(asteroid_transform.translation)
-                < 5.0 + asteroid_radius
+                < 5.0 + asteroid_diameter
             {
                 // Get the asteroid's points
                 let asteroid_mesh = meshes.get(&asteroid_mesh.0).unwrap();

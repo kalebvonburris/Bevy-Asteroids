@@ -1,12 +1,22 @@
+//! Systems for managing bullets in the game.
+
 use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_kira_audio::AudioChannel;
 
 use crate::{
-    asteroid::{Asteroid, AsteroidSize, LARGE_PARAMETERS, MEDIUM_PARAMETERS, SMALL_PARAMETERS}, audio::channels::ExplosionChannel, explosion::{create_explosion, ExplosionConfig}, lines_intersect, mesh_and_transform_to_points
+    asteroid::{Asteroid, AsteroidSize},
+    audio::{asteroid::destroy_asteroid, channels::ExplosionChannel},
+    explosion::{create_explosion, ExplosionConfig},
+    lines_intersect, mesh_and_transform_to_points, ui::update::ScoreEvent,
 };
 
 use super::Bullet;
 
+/// Handles the movement of bullets based on their speed and the time elapsed since the last frame.
+///
+/// # Arguments
+/// * `time`: The `Time` resource to calculate the movement delta.
+/// * `query`: A query that retrieves every `Bullet` and its `Transform`.
 pub fn move_bullets(time: Res<Time>, mut query: Query<(&mut Transform, &Bullet)>) {
     for (mut transform, bullet) in query.iter_mut() {
         let angle = transform.rotation.to_euler(EulerRot::ZXY).0;
@@ -16,6 +26,12 @@ pub fn move_bullets(time: Res<Time>, mut query: Query<(&mut Transform, &Bullet)>
     }
 }
 
+/// Checks if bullets are within the bounds of the game window and despawns them if they are not.
+///
+/// # Arguments
+/// * `commands`: The `Commands` resource to despawn bullets that are out of bounds.
+/// * `query`: A query that retrieves every `Bullet` and its `Transform`.
+/// * `window`: A query that retrieves the primary window to get its size.
 pub fn check_bullet_bounds(
     mut commands: Commands,
     mut query: Query<(Entity, &Bullet, &Transform)>,
@@ -42,6 +58,18 @@ pub fn check_bullet_bounds(
     }
 }
 
+/// Checks for collisions between bullets and asteroids, and handles the destruction of both.
+///
+/// # Arguments
+/// * `commands`: The `Commands` resource to despawn bullets and asteroids.
+/// * `asteroids`: A query that retrieves every `Asteroid` and its `Transform`.
+/// * `bullets`: A query that retrieves every `Bullet` and its `Transform`.
+/// * `asset_server`: The `AssetServer` resource to play sound effects.
+/// * `audio`: The `AudioChannel<ExplosionChannel>` resource to play the sound effects.
+/// * `meshes`: The `Assets<Mesh>` resource to get the mesh of the asteroids and bullets.
+/// * `materials`: The `Assets<ColorMaterial>` resource to get the material of the bullets.
+/// * `explosion_config`: The `ExplosionConfig` resource to create explosions.
+/// * `time`: The `Time` resource to determine the frequency of asteroid spawning.
 pub fn check_bullet_collisions(
     mut commands: Commands,
     asteroids: Query<(Entity, &Asteroid, &Transform, &Mesh2d)>,
@@ -55,17 +83,16 @@ pub fn check_bullet_collisions(
 ) {
     for (bullet_entity, _, bullet_transform, bullet_mesh) in bullets.iter() {
         for (asteroid_entity, asteroid, asteroid_transform, asteroid_mesh) in asteroids.iter() {
-            let asteroid_radius = match asteroid.size {
-                AsteroidSize::Small => SMALL_PARAMETERS.1,
-                AsteroidSize::Medium => MEDIUM_PARAMETERS.1,
-                AsteroidSize::Large => LARGE_PARAMETERS.1,
-            };
+            let asteroid_diameter = asteroid.size.diameter();
 
             let distance = bullet_transform
                 .translation
                 .distance(asteroid_transform.translation);
 
-            if distance < asteroid_radius + 3.5 {
+            // Check if the bullet is colliding with the asteroid - We add a small buffer to the distance
+            // to account for the bullet's size and ensure it hits the asteroid.
+            // This is a bit of a hack, but it works well enough. :\
+            if distance < asteroid_diameter + 3.5 {
                 // Get the asteroid's points
                 let asteroid_mesh = meshes.get(&asteroid_mesh.0).unwrap();
 
@@ -106,7 +133,11 @@ pub fn check_bullet_collisions(
                             false,
                         );
 
-                        crate::audio::asteroid::destroy_asteroid(asteroid.size, &asset_server, &audio);
+                        // Play the asteroid destruction sound
+                        destroy_asteroid(asteroid.size, &asset_server, &audio);
+
+                        // Create a score event
+                        commands.send_event(ScoreEvent(1));
 
                         // Check if we need to make children
                         if asteroid.size != AsteroidSize::Small {
@@ -116,19 +147,21 @@ pub fn check_bullet_collisions(
                                 _ => unreachable!(),
                             };
 
+                            // Spawn two smaller asteroids
                             for _ in 0..2 {
-                                // Pick a random spot in the asteroid's radius
-                                let radius = match asteroid.size {
-                                    AsteroidSize::Small => SMALL_PARAMETERS.1,
-                                    AsteroidSize::Medium => MEDIUM_PARAMETERS.1,
-                                    AsteroidSize::Large => LARGE_PARAMETERS.1,
-                                };
+                                // Pick a random spot in the asteroid's diameter
+                                let diameter = asteroid.size.diameter();
 
-                                let r = radius * rand::random_range(0.0f32..1.0).sqrt();
+                                // Generate a random point within the asteroid's diameter
+                                let r = diameter * rand::random_range(0.0f32..1.0).sqrt();
 
+                                // Generate a random angle
+                                // This is done by picking a random angle between 0 and 2 * PI
                                 let theta =
                                     rand::random_range(0.0f32..1.0) * 2.0 * std::f32::consts::PI;
 
+                                // Calculate the x and y coordinates of the point
+                                // using polar coordinates
                                 let x = r * theta.cos();
                                 let y = r * theta.sin();
 

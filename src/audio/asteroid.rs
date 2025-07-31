@@ -7,6 +7,12 @@ use crate::asteroid::AsteroidSize;
 
 use super::channels::ExplosionChannel;
 
+/// Plays a sound for destroying an asteroid based on its size.
+///
+/// # Arguments
+/// * `size`: The size of the asteroid being destroyed.
+/// * `asset_server`: The `AssetServer` resource to load the sound asset.
+/// * `audio`: The `AudioChannel<ExplosionChannel>` resource to play the sound.
 pub fn destroy_asteroid(
     size: AsteroidSize,
     asset_server: &Res<AssetServer>,
@@ -18,5 +24,10 @@ pub fn destroy_asteroid(
         AsteroidSize::Small => "embedded://audio/asteroid_small_destruction.mp3",
     };
 
-    audio.play(asset_server.load(sound)).with_volume(0.75);
+    // If found 0.75 to be pleasantly loud, but not too loud for these sounds.
+    audio.play(asset_server.load(sound)).with_volume(if audio.is_playing_sound() {
+        0.35
+    } else {
+        0.5
+    });
 }

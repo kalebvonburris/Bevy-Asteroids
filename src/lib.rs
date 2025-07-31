@@ -1,22 +1,31 @@
+//! # Bevy Asteroids
+//! 
+//! A 2D space shooter game built with Bevy.
+
+// Many bevy systems require >7 arguments, which is not allowed by clippy.
+#![allow(clippy::too_many_arguments)]
+
 pub mod asteroid;
+pub mod audio;
 pub mod bullet;
 pub mod explosion;
 pub mod ship;
-pub mod audio;
+pub mod ui;
 
+use crate::{audio::channels, ui::{setup::setup_ui, update::{update_score, PlayerScore, ScoreEvent}}};
 use asteroid::{check_asteroid_bounds, move_asteroids, spawn_asteroids};
 use audio::main_song::play_main_song;
-use bevy::{app::PanicHandlerPlugin, diagnostic::DiagnosticsPlugin, log::LogPlugin, prelude::*, render::mesh::VertexAttributeValues};
+use bevy::{
+    app::PanicHandlerPlugin, diagnostic::DiagnosticsPlugin, log::LogPlugin, prelude::*,
+    render::mesh::VertexAttributeValues,
+};
 use bevy_embedded_assets::EmbeddedAssetPlugin;
 use bevy_kira_audio::{AudioApp, AudioPlugin};
 use bullet::{check_bullet_bounds, check_bullet_collisions, move_bullets, setup_bullet};
 use explosion::{setup_explosions, systems::explosion_system};
-use ship::{
-    check_ship_bounds, check_ship_collisions, color_player, heal_player, player_input_and_movement,
-    setup_player,
-};
-use crate::audio::channels;
+use ship::*;
 
+/// The main plugin for the game, which sets up the game state and systems.
 pub struct AsteroidsPlugin;
 
 impl Plugin for AsteroidsPlugin {
@@ -28,17 +37,21 @@ impl Plugin for AsteroidsPlugin {
         // check to see if we spawn asteroids
         app.insert_resource(Time::<Fixed>::from_seconds(0.5));
 
+        // Insert the player's score resource and add the event.
+        app.insert_resource(PlayerScore(0));
+        app.add_event::<(ScoreEvent)>();
+
         app.add_systems(Startup, spawn_camera);
 
         // Setup default plugins
         let mut default_plugins = DefaultPlugins.set(WindowPlugin {
-                primary_window: Some(Window {
-                    title: "Asteroids".to_string(),
-                    fit_canvas_to_parent: true,
-                    ..default()
-                }),
+            primary_window: Some(Window {
+                title: "Asteroids".to_string(),
+                fit_canvas_to_parent: true,
                 ..default()
-            });
+            }),
+            ..default()
+        });
 
         if !cfg!(debug_assertions) {
             default_plugins = default_plugins.disable::<LogPlugin>();
@@ -49,17 +62,16 @@ impl Plugin for AsteroidsPlugin {
             .disable::<PanicHandlerPlugin>()
             .disable::<DiagnosticsPlugin>();
 
-        app.add_plugins((
-            default_plugins,
-            EmbeddedAssetPlugin::default(),
-            AudioPlugin
-        ));
+        app.add_plugins((default_plugins, EmbeddedAssetPlugin::default(), AudioPlugin));
 
         // Add audio channels
         app.add_audio_channel::<channels::LaserChannel>();
         app.add_audio_channel::<channels::ExplosionChannel>();
 
-        app.add_systems(Startup, (setup_player, setup_bullet, setup_explosions, play_main_song));
+        app.add_systems(
+            Startup,
+            (setup_player, setup_bullet, setup_explosions, play_main_song, setup_ui),
+        );
 
         app.add_systems(
             Update,
@@ -78,6 +90,8 @@ impl Plugin for AsteroidsPlugin {
                 check_bullet_collisions,
                 // Explosions
                 explosion_system,
+                // Score and UI
+                update_score,
             ),
         );
 
@@ -98,8 +112,16 @@ fn spawn_camera(mut commands: Commands) {
     commands.spawn((Name::new("Camera"), Camera2d));
 }
 
-/// Check if two lines intersect
-/// Returns the intersection point if they do, otherwise None
+/// Checks if two lines intersect.
+/// 
+/// # Arguments
+/// * `p1`: The first point of the first line.
+/// * `p2`: The second point of the first line.
+/// * `p3`: The first point of the second line.
+/// * `p4`: The second point of the second line.
+/// 
+/// # Returns
+/// An `Option<Vec2>` that contains the intersection point if the lines intersect, or `None` if they do not.
 pub fn lines_intersect(p1: Vec2, p2: Vec2, p3: Vec2, p4: Vec2) -> Option<Vec2> {
     let s1 = p2 - p1;
     let s2 = p4 - p3;
@@ -119,6 +141,14 @@ pub fn lines_intersect(p1: Vec2, p2: Vec2, p3: Vec2, p4: Vec2) -> Option<Vec2> {
     }
 }
 
+/// Converts a mesh and its transform into a list of points in absolute coordinates.
+/// 
+/// # Arguments
+/// * `mesh`: The `Mesh` to convert.
+/// * `transform`: The `Transform` to apply to the mesh points.
+/// 
+/// # Returns
+/// A `Vec<Vec2>` containing the transformed, absolute points of the mesh.
 pub fn mesh_and_transform_to_points(mesh: &Mesh, transform: &Transform) -> Vec<Vec2> {
     let position_data = mesh.attribute(Mesh::ATTRIBUTE_POSITION).unwrap();
 

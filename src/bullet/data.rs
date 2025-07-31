@@ -1,5 +1,8 @@
+//! Data for bullets in the game.
+
 use bevy::{asset::RenderAssetUsages, prelude::*, render::mesh::PrimitiveTopology};
 
+/// A bullet fired from the `PlayerShip`.
 #[derive(Component)]
 pub struct Bullet {
     pub speed: f32,
@@ -31,29 +34,32 @@ impl Bullet {
     }
 }
 
+/// Configuration for the bullet, including its mesh and material.
+///
+/// # Arguments
+/// * `mesh`: The mesh used for the bullet.
+/// * `material`: The material used for the bullet.
 pub fn setup_bullet(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    // Create a mesh for the bullet
     let bullet_mesh = Mesh::new(PrimitiveTopology::LineStrip, RenderAssetUsages::all())
         .with_inserted_attribute(
             Mesh::ATTRIBUTE_POSITION,
             vec![Vec3::new(0.0, 0.0, 2.0), Vec3::new(0.0, 5.0, 2.0)],
         );
 
-    // Create a material for the bullet
     let bullet_material = materials.add(ColorMaterial::from(Color::LinearRgba(LinearRgba::new(
         1.0, 0.2, 0.2, 1.0,
-    ))));
+    )))); // That's a disgusting amount of closing parens :(
 
-    // Create a bullet config
     let bullet_config = BulletConfig::new(meshes.add(bullet_mesh), bullet_material);
 
     commands.insert_resource(bullet_config);
 }
 
+/// Configuration for the bullet; includes its mesh and material.
 #[derive(Resource)]
 pub struct BulletConfig {
     pub mesh: Handle<Mesh>,
