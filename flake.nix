@@ -12,8 +12,9 @@
       let
         overlays = [ (import rust-overlay) ];
         pkgs = import nixpkgs { inherit system overlays; };
-        rustToolchain = pkgs.rust-bin.stable.latest.default.override {
+        rustToolchain = pkgs.rust-bin.nightly.latest.default.override {
           targets = [ "x86_64-unknown-linux-gnu" "x86_64-pc-windows-gnu" "wasm32-unknown-unknown" ];
+          extensions = [ "rust-src" ];
         };
         
         # MinGW cross-compilation packages
@@ -74,10 +75,7 @@
               # Use the cross-compilation toolchain properly
               mingwPkgs.buildPackages.gcc
               mingwPkgs.windows.mingw_w64
-              # Override mcfgthreads to include static libraries
-              (mingwPkgs.windows.mcfgthreads.overrideAttrs {
-                dontDisableStatic = true;
-              })
+              mingwPkgs.windows.pthreads
             ];
             
             # Set up proper environment variables for cross-compilation
@@ -115,22 +113,14 @@
               pkgs.nodejs
             ];
             shellHook = ''
-              # Clean environment for WASM
-              unset CC
-              unset CXX
-              unset AR
-              unset RANLIB
-              unset STRIP
-              
-              # Explicitly set WASM-friendly tools
-              export CC_wasm32_unknown_unknown="clang"
-              export AR_wasm32_unknown_unknown="llvm-ar"
-              
-              # Install bevy cli
-              cargo install --git https://github.com/TheBevyFlock/bevy_cli --tag cli-v0.1.0-alpha.1 --locked bevy_cli
-
               # Add Cargo bin directory to PATH
               export PATH="$HOME/.cargo/bin:$PATH"
+                            
+              # Install bevy cli if not already present
+              if ! command -v bevy &> /dev/null; then
+                echo "Installing bevy CLI..."
+                cargo install --git https://github.com/TheBevyFlock/bevy_cli --tag cli-v0.1.0-alpha.1 --locked bevy_cli
+              fi
               
               echo "WASM development environment"
               echo "Build with: bevy build --release web --bundle"

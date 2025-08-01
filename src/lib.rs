@@ -19,7 +19,6 @@ use bevy::{
     app::PanicHandlerPlugin, diagnostic::DiagnosticsPlugin, log::LogPlugin, prelude::*,
     render::mesh::VertexAttributeValues,
 };
-use bevy_embedded_assets::EmbeddedAssetPlugin;
 use bevy_kira_audio::{AudioApp, AudioPlugin};
 use bullet::{check_bullet_bounds, check_bullet_collisions, move_bullets, setup_bullet};
 use explosion::{setup_explosions, systems::explosion_system};
@@ -62,7 +61,7 @@ impl Plugin for AsteroidsPlugin {
             .disable::<PanicHandlerPlugin>()
             .disable::<DiagnosticsPlugin>();
 
-        app.add_plugins((default_plugins, EmbeddedAssetPlugin::default(), AudioPlugin));
+        app.add_plugins((default_plugins, AudioPlugin));
 
         // Add audio channels
         app.add_audio_channel::<channels::LaserChannel>();

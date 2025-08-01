@@ -52,6 +52,7 @@ jobs:
         env:
           OUTPUT: CHANGELOG.md
       - name: Create release
+        if: ${{ !github.event.act }} # skip during local actions testing
         id: create_release
         uses: actions/create-release@v1
         env:
@@ -144,8 +145,9 @@ jobs:
           mv target/release/${{ env.GAME_EXECUTABLE_NAME }} .
       - name: Bundle release
         run: |
-          tar -czf ${{ env.GAME_EXECUTABLE_NAME }}_linux.tar.gz ${{ env.GAME_EXECUTABLE_NAME }} assets credits
+          tar -czf ${{ env.GAME_EXECUTABLE_NAME }}_linux.tar.gz ${{ env.GAME_EXECUTABLE_NAME }} assets
       - name: Upload release
+        if : ${{ !github.event.act }} # skip during local actions testing
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
@@ -179,6 +181,7 @@ jobs:
         files: assets/ credits/ target/x86_64-pc-windows-gnu/release/${{ env.GAME_EXECUTABLE_NAME }}.exe
         dest: ${{ env.GAME_EXECUTABLE_NAME }}_windows.zip
     - name: Upload release
+      if: ${{ !github.event.act }} # skip during local actions testing
       uses: svenstaro/upload-release-action@v2
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
@@ -202,8 +205,10 @@ jobs:
       with:
         github_access_token: ${{ secrets.GITHUB_TOKEN }}
     - name: Build Release
-      run: nix develop .#wasm --command bevy build --release web --bundle
+      # Turn wasm-opt off as cargo already does that if possible
+      run: nix develop .#wasm --command bevy build --release --no-default-features true web --wasm-opt false --bundle
     - name: Deploy
+      if: ${{ !github.event.act }} # skip during local actions testing
       uses: peaceiris/actions-gh-pages@v4
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}

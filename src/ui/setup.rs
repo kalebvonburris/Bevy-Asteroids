@@ -15,7 +15,6 @@ pub fn setup_ui(mut commands: Commands) {
             width: Val::Percent(100.0),
             height: Val::Percent(100.0),
             top: Val::Percent(5.0),
-            left: Val::Percent(50.0),
             ..default()
         },
     ));
