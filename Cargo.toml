@@ -23,8 +23,6 @@ default = ["bevy/dynamic_linking"]
 bevy = { version = "0.16.1", default-features = false, features = [
     "bevy_color", "bevy_scene", "bevy_sprite", "bevy_window", "multi_threaded", "x11", "bevy_audio", "mp3", "bevy_ui", "default_font", "bevy_text"
 ]}
-blake3 = { version = "1.5", default-features = false, features = [ "pure" ] }
-
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 getrandom = { version = "0.3.3", features = ["wasm_js"] }

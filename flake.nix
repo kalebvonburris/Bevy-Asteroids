@@ -13,7 +13,7 @@
         overlays = [ (import rust-overlay) ];
         pkgs = import nixpkgs { inherit system overlays; };
         rustToolchain = pkgs.rust-bin.stable.latest.default.override {
-          targets = [ "x86_64-pc-windows-gnu" "wasm32-unknown-unknown" ];
+          targets = [ "x86_64-unknown-linux-gnu" "x86_64-pc-windows-gnu" "wasm32-unknown-unknown" ];
         };
         
         # MinGW cross-compilation packages
@@ -71,20 +71,32 @@
               rustToolchain
               pkgs.pkg-config
               
-              # MinGW cross-compilation tools
-              mingwPkgs.stdenv.cc
+              # Use the cross-compilation toolchain properly
+              mingwPkgs.buildPackages.gcc
               mingwPkgs.windows.mingw_w64
-              mingwPkgs.windows.mingw_w64_pthreads
+              # Override mcfgthreads to include static libraries
+              (mingwPkgs.windows.mcfgthreads.overrideAttrs {
+                dontDisableStatic = true;
+              })
             ];
+            
+            # Set up proper environment variables for cross-compilation
             shellHook = ''
-              # Set up MinGW cross-compilation environment
-              export CC_x86_64_pc_windows_gnu="${mingwPkgs.stdenv.cc}/bin/x86_64-w64-mingw32-gcc"
-              export CXX_x86_64_pc_windows_gnu="${mingwPkgs.stdenv.cc}/bin/x86_64-w64-mingw32-g++"
-              export AR_x86_64_pc_windows_gnu="${mingwPkgs.stdenv.cc}/bin/x86_64-w64-mingw32-ar"
-              export CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER="${mingwPkgs.stdenv.cc}/bin/x86_64-w64-mingw32-gcc"
+              # Configure Rust for cross-compilation
+              export CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER="${mingwPkgs.buildPackages.gcc}/bin/x86_64-w64-mingw32-gcc"
+              export CC_x86_64_pc_windows_gnu="${mingwPkgs.buildPackages.gcc}/bin/x86_64-w64-mingw32-gcc"
+              export CXX_x86_64_pc_windows_gnu="${mingwPkgs.buildPackages.gcc}/bin/x86_64-w64-mingw32-g++"
+              export AR_x86_64_pc_windows_gnu="${mingwPkgs.buildPackages.gcc}/bin/x86_64-w64-mingw32-ar"
               
-              # Add Cargo bin directory to PATH
-              export PATH="$HOME/.cargo/bin:$PATH"
+              # Set up library paths for MinGW
+              export PKG_CONFIG_ALLOW_CROSS=1
+              export PKG_CONFIG_PATH="${mingwPkgs.windows.mingw_w64}/lib/pkgconfig:${mingwPkgs.windows.mcfgthreads}/lib/pkgconfig"
+              
+              # Ensure the cross-compilation sysroot is available
+              export BINDGEN_EXTRA_CLANG_ARGS="-I${mingwPkgs.windows.mingw_w64}/include -I${mingwPkgs.windows.mcfgthreads}/include"
+              
+              # Add the MinGW bin directory to PATH for runtime tools
+              export PATH="${mingwPkgs.buildPackages.gcc}/bin:$PATH"
               
               echo "Windows cross-compilation environment"
               echo "Build with: cargo build --target=x86_64-pc-windows-gnu --release"
@@ -114,6 +126,9 @@
               export CC_wasm32_unknown_unknown="clang"
               export AR_wasm32_unknown_unknown="llvm-ar"
               
+              # Install bevy cli
+              cargo install --git https://github.com/TheBevyFlock/bevy_cli --tag cli-v0.1.0-alpha.1 --locked bevy_cli
+
               # Add Cargo bin directory to PATH
               export PATH="$HOME/.cargo/bin:$PATH"
               

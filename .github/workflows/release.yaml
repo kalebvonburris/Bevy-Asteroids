@@ -130,7 +130,7 @@ jobs:
       - name: Setup Rust Cache
         uses: Swatinem/rust-cache@v2
       - name: Install Dependencies
-        run: sudo apt-get update; sudo apt-get upgrade -y
+        run: sudo apt-get update
       - name: Install Nix
         uses: cachix/install-nix-action@v31
         with:
@@ -166,7 +166,7 @@ jobs:
     - name: Setup Rust Cache
       uses: Swatinem/rust-cache@v2
     - name: Update Ubuntu
-      run: sudo apt-get update; sudo apt-get upgrade -y
+      run: sudo apt-get update
     - name: Install Nix
       uses: cachix/install-nix-action@v31
       with:
@@ -176,7 +176,7 @@ jobs:
     - name: Zip release
       uses: vimtor/action-zip@v1
       with:
-        files: assets/ credits/ target/release/${{ env.GAME_EXECUTABLE_NAME }}.exe
+        files: assets/ credits/ target/x86_64-pc-windows-gnu/release/${{ env.GAME_EXECUTABLE_NAME }}.exe
         dest: ${{ env.GAME_EXECUTABLE_NAME }}_windows.zip
     - name: Upload release
       uses: svenstaro/upload-release-action@v2
@@ -196,7 +196,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
     - name: Install Dependencies
-      run: sudo apt-get update; sudo apt-get upgrade -y
+      run: sudo apt-get update
     - name: Install Nix
       uses: cachix/install-nix-action@v31
       with:
@@ -207,8 +207,8 @@ jobs:
       uses: peaceiris/actions-gh-pages@v4
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: .
-        publish_branch: target/bevy_web/web-release/asteroids
+        publish_dir: target/bevy_web/web-release/asteroids
+        publish_branch: web
         destination_dir: .
         commit_message: 'chore(bot): Deploy web release for version ${{ env.VERSION }}'
 

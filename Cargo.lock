@@ -200,7 +200,6 @@ dependencies = [
  "bevy",
  "bevy_embedded_assets",
  "bevy_kira_audio",
- "blake3",
  "getrandom 0.3.3",
  "kira 0.10.8",
  "log",
