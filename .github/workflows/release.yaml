@@ -204,20 +204,14 @@ jobs:
         github_access_token: ${{ secrets.GITHUB_TOKEN }}
     - name: Build Release
       run: nix develop .#wasm --command bevy build --release web --bundle
-    - name: Zip release
-      uses: vimtor/action-zip@v1
+    - name: Deploy
+      uses: peaceiris/actions-gh-pages@v4
       with:
-        files: target/bevy_web/web-release/asteroids
-        dest: ${{ env.GAME_EXECUTABLE_NAME }}_web.zip
-    - name: Upload release
-      uses: svenstaro/upload-release-action@v2
-      with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: ${{ env.GAME_EXECUTABLE_NAME }}_web.zip
-        asset_name: ${{ env.GAME_EXECUTABLE_NAME }}_${{ env.VERSION }}_web.zip
-        release_name: ${{ env.VERSION }}
-        tag: ${{ env.VERSION }}
-        overwrite: true
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: .
+        publish_branch: target/bevy_web/web-release/asteroids
+        destination_dir: .
+        commit_message: 'chore(bot): Deploy web release for version ${{ env.VERSION }}'
 
 # Interesting ideas for the future...
 #  build-for-iOS:
