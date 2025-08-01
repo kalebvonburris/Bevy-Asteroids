@@ -1,12 +1,3 @@
-[target.x86_64-pc-windows-msvc]
-linker = "lld"
-rustflags = [
-  "-Lnative=/home/kaleb/.xwin/crt/lib/x86_64",
-  "-Lnative=/home/kaleb/.xwin/sdk/lib/um/x86_64",
-  "-Lnative=/home/kaleb/.xwin/sdk/lib/ucrt/x86_64",
-  "-Ctarget-feature=+crt-static",
-]
-
 [target.i686-pc-windows-msvc]
 rustflags = ["-Ctarget-feature=+crt-static"]
 

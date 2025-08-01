@@ -64,60 +64,61 @@ jobs:
           draft: false
           prerelease: false
 
-  build-macOS:
-    runs-on: macos-latest
-    needs: [get-version, create-release]
-    env:
-      # macOS 11.0 Big Sur is the first version to support universal binaries
-      MACOSX_DEPLOYMENT_TARGET: 11.0
-      VERSION: ${{needs.get-version.outputs.version}}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-      - name: Remove build script
-        run: |
-          rm build.rs
-      - name: Install rust toolchain for Apple Silicon
-        uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          toolchain: nightly
-          target: aarch64-apple-darwin
-      - name: Setup Rust Cache
-        uses: Swatinem/rust-cache@v2
-      - name: Build release for Apple Silicon
-        run: |
-          rustup target add aarch64-apple-darwin
-          SDKROOT=$(xcrun -sdk macosx --show-sdk-path) cargo build --release --no-default-features --target=aarch64-apple-darwin
-      - name: Install rust toolchain for Apple x86
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: nightly
-          targets: x86_64-apple-darwin
-      - name: Build release for x86 Apple
-        run: |
-          SDKROOT=$(xcrun -sdk macosx --show-sdk-path) cargo build --release --no-default-features --target=x86_64-apple-darwin
-      - name: Create Universal Binary
-        run: |
-          lipo -create -output target/release/${{ env.GAME_EXECUTABLE_NAME }} target/aarch64-apple-darwin/release/${{ env.GAME_EXECUTABLE_NAME }} target/x86_64-apple-darwin/release/${{ env.GAME_EXECUTABLE_NAME }}
-      - name: Create release
-        run: |
-          mkdir -p build/macos/src/Game.app/Contents/MacOS/assets
-          cp -r assets/ build/macos/src/Game.app/Contents/MacOS/assets
-          cp -r credits/ build/macos/src/Game.app/Contents/MacOS/credits
-          cp target/release/${{ env.GAME_EXECUTABLE_NAME }} build/macos/src/Game.app/Contents/MacOS/
-          strip build/macos/src/Game.app/Contents/MacOS/${{ env.GAME_EXECUTABLE_NAME }}
-          mv build/macos/src/Game.app build/macos/src/${{ env.GAME_OSX_APP_NAME }}.app
-          ln -s /Applications build/macos/src/
-          hdiutil create -fs HFS+ -volname "${{ env.GAME_OSX_APP_NAME }}" -srcfolder build/macos/src ${{ env.GAME_EXECUTABLE_NAME }}.dmg
-      - name: Upload release
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ${{ env.GAME_EXECUTABLE_NAME }}.dmg
-          asset_name: ${{ env.GAME_EXECUTABLE_NAME }}_${{ env.VERSION }}_macOS.dmg
-          release_name: ${{ env.VERSION }}
-          tag: ${{ env.VERSION }}
-          overwrite: true
+  # MacOS is not supported - I don't have a Mac to test it on, so I can't maintain it
+  # build-macOS:
+  #   runs-on: macos-latest
+  #   needs: [get-version, create-release]
+  #   env:
+  #     # macOS 11.0 Big Sur is the first version to support universal binaries
+  #     MACOSX_DEPLOYMENT_TARGET: 11.0
+  #     VERSION: ${{needs.get-version.outputs.version}}
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v3
+  #     - name: Remove build script
+  #       run: |
+  #         rm build.rs
+  #     - name: Install rust toolchain for Apple Silicon
+  #       uses: actions-rust-lang/setup-rust-toolchain@v1
+  #       with:
+  #         toolchain: nightly
+  #         target: aarch64-apple-darwin
+  #     - name: Setup Rust Cache
+  #       uses: Swatinem/rust-cache@v2
+  #     - name: Build release for Apple Silicon
+  #       run: |
+  #         rustup target add aarch64-apple-darwin
+  #         SDKROOT=$(xcrun -sdk macosx --show-sdk-path) cargo build --release --no-default-features --target=aarch64-apple-darwin
+  #     - name: Install rust toolchain for Apple x86
+  #       uses: dtolnay/rust-toolchain@master
+  #       with:
+  #         toolchain: nightly
+  #         targets: x86_64-apple-darwin
+  #     - name: Build release for x86 Apple
+  #       run: |
+  #         SDKROOT=$(xcrun -sdk macosx --show-sdk-path) cargo build --release --no-default-features --target=x86_64-apple-darwin
+  #     - name: Create Universal Binary
+  #       run: |
+  #         lipo -create -output target/release/${{ env.GAME_EXECUTABLE_NAME }} target/aarch64-apple-darwin/release/${{ env.GAME_EXECUTABLE_NAME }} target/x86_64-apple-darwin/release/${{ env.GAME_EXECUTABLE_NAME }}
+  #     - name: Create release
+  #       run: |
+  #         mkdir -p build/macos/src/Game.app/Contents/MacOS/assets
+  #         cp -r assets/ build/macos/src/Game.app/Contents/MacOS/assets
+  #         cp -r credits/ build/macos/src/Game.app/Contents/MacOS/credits
+  #         cp target/release/${{ env.GAME_EXECUTABLE_NAME }} build/macos/src/Game.app/Contents/MacOS/
+  #         strip build/macos/src/Game.app/Contents/MacOS/${{ env.GAME_EXECUTABLE_NAME }}
+  #         mv build/macos/src/Game.app build/macos/src/${{ env.GAME_OSX_APP_NAME }}.app
+  #         ln -s /Applications build/macos/src/
+  #         hdiutil create -fs HFS+ -volname "${{ env.GAME_OSX_APP_NAME }}" -srcfolder build/macos/src ${{ env.GAME_EXECUTABLE_NAME }}.dmg
+  #     - name: Upload release
+  #       uses: svenstaro/upload-release-action@v2
+  #       with:
+  #         repo_token: ${{ secrets.GITHUB_TOKEN }}
+  #         file: ${{ env.GAME_EXECUTABLE_NAME }}.dmg
+  #         asset_name: ${{ env.GAME_EXECUTABLE_NAME }}_${{ env.VERSION }}_macOS.dmg
+  #         release_name: ${{ env.VERSION }}
+  #         tag: ${{ env.VERSION }}
+  #         overwrite: true
 
   build-linux:
     runs-on: ubuntu-latest
@@ -127,18 +128,16 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-      - name: Install rust toolchain
-        uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          toolchain: nightly
-          components: rust-src
       - name: Setup Rust Cache
         uses: Swatinem/rust-cache@v2
       - name: Install Dependencies
-        run: sudo apt-get update; sudo apt-get -y install g++ pkg-config libx11-dev libasound2-dev libudev-dev libxkbcommon-x11-0
+        run: sudo apt-get update; sudo apt-get upgrade -y
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
       - name: Build release
-        run: |
-          cargo build --release --no-default-features
+        run: nix develop .#default --command cargo build --release --no-default-features
       - name: Prepare release
         run: |
           strip target/release/${{ env.GAME_EXECUTABLE_NAME }}
@@ -165,21 +164,16 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
-    - name: Install rust toolchain
-      uses: actions-rust-lang/setup-rust-toolchain@v1
-      with:
-        toolchain: nightly
-        components: rust-src
-        target: x86_64-pc-windows-msvc
     - name: Setup Rust Cache
       uses: Swatinem/rust-cache@v2
-    - name: Setup XWin
-      run: |
-        cargo install xwin
-        sudo mkdir -p /home/kaleb/.xwin
-        xwin --accept-license splat --output /home/kaleb/.xwin
-    - name: Build release
-      run: cargo build --target=x86_64-pc-windows-msvc --release --no-default-features
+    - name: Update Ubuntu
+      run: sudo apt-get update; sudo apt-get upgrade -y
+    - name: Install Nix
+      uses: cachix/install-nix-action@v31
+      with:
+        github_access_token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Build release with Nix
+      run: nix develop .#windows --command cargo build --target=x86_64-pc-windows-gnu --release --no-default-features
     - name: Zip release
       uses: vimtor/action-zip@v1
       with:
@@ -202,35 +196,18 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
-    - name: Install rust toolchain
-      uses: actions-rust-lang/setup-rust-toolchain@v1
-      with:
-        toolchain: stable
-        components: rust-src
-        target: wasm32-unknown-unknown
     - name: Install Dependencies
-      run: sudo apt-get update; sudo apt-get install -y pkg-config libx11-dev libasound2-dev libudev-dev
-    - name: Build Release
-      run: cargo build --release --target wasm32-unknown-unknown --no-default-features
-    - name: Optimize Wasm
-      uses: NiklasEi/wasm-opt-action@v2
+      run: sudo apt-get update; sudo apt-get upgrade -y
+    - name: Install Nix
+      uses: cachix/install-nix-action@v31
       with:
-        file: dist/*.wasm
-   # Trunk cannot import assets from relative paths (see e.g. https://github.com/thedodd/trunk/issues/395)
-   # On sites like itch.io, we don't know on which base path the game gets served, so we need to rewrite all links to be relative
- #- name: Make paths relative
- #  run: |
- #    sed -i 's/\/index/.\/index/g' dist/index.html
- #    sed -i 's/\/${{ env.GAME_EXECUTABLE_NAME }}/.\/${{ env.GAME_EXECUTABLE_NAME }}/g' dist/index.html
-    - name: wasm-bindgen
-      run: |
-        cargo install wasm-bindgen-cli
-        mkdir out
-        wasm-bindgen --out-dir out --target web target
+        github_access_token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Build Release
+      run: nix develop .#wasm --command bevy build --release web --bundle
     - name: Zip release
       uses: vimtor/action-zip@v1
       with:
-        files: out/
+        files: target/bevy_web/web-release/asteroids
         dest: ${{ env.GAME_EXECUTABLE_NAME }}_web.zip
     - name: Upload release
       uses: svenstaro/upload-release-action@v2

@@ -39,7 +39,7 @@ impl Plugin for AsteroidsPlugin {
 
         // Insert the player's score resource and add the event.
         app.insert_resource(PlayerScore(0));
-        app.add_event::<(ScoreEvent)>();
+        app.add_event::<ScoreEvent>();
 
         app.add_systems(Startup, spawn_camera);
 
