@@ -12,7 +12,7 @@ pub mod explosion;
 pub mod ship;
 pub mod ui;
 
-use crate::{audio::channels, ui::{setup::setup_ui, update::{update_score, PlayerScore, ScoreEvent}}};
+use crate::{audio::channels, ui::{setup::setup_ui, systems::{update_score, PlayerScore, ScoreEvent}}};
 use asteroid::{check_asteroid_bounds, move_asteroids, spawn_asteroids};
 use audio::main_song::play_main_song;
 use bevy::{

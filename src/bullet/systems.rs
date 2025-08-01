@@ -7,7 +7,7 @@ use crate::{
     asteroid::{Asteroid, AsteroidSize},
     audio::{asteroid::destroy_asteroid, channels::ExplosionChannel},
     explosion::{create_explosion, ExplosionConfig},
-    lines_intersect, mesh_and_transform_to_points, ui::update::ScoreEvent,
+    lines_intersect, mesh_and_transform_to_points, ui::systems::ScoreEvent,
 };
 
 use super::Bullet;
