@@ -135,12 +135,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "anyhow"
-version = "1.0.98"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e16d2d3311acee920a9eb8d33b8cbc1787ce4a264e85f964c2404b969bdcd487"
-
-[[package]]
 name = "approx"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -192,9 +186,7 @@ name = "asteroids"
 version = "0.1.0"
 dependencies = [
  "bevy",
- "bevy_kira_audio",
  "getrandom 0.3.3",
- "kira 0.10.8",
  "log",
  "rand 0.9.2",
 ]
@@ -267,12 +259,6 @@ checksum = "8b75356056920673b02621b35afd0f7dda9306d03c79a30f5c56c44cf256e3de"
 dependencies = [
  "portable-atomic",
 ]
-
-[[package]]
-name = "atomic-arena"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "73e8ed45f88ed32e6827a96b62d8fd4086d72defc754c5c6bd08470c1aaf648e"
 
 [[package]]
 name = "atomic-waker"
@@ -401,6 +387,23 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "bevy_audio"
+version = "0.16.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f2b4f6f2a5c6c0e7c6825e791d2a061c76c2d6784f114c8f24382163fabbfaaa"
+dependencies = [
+ "bevy_app",
+ "bevy_asset",
+ "bevy_derive",
+ "bevy_ecs",
+ "bevy_math",
+ "bevy_reflect",
+ "bevy_transform",
+ "rodio",
+ "tracing",
 ]
 
 [[package]]
@@ -641,6 +644,7 @@ dependencies = [
  "bevy_a11y",
  "bevy_app",
  "bevy_asset",
+ "bevy_audio",
  "bevy_color",
  "bevy_core_pipeline",
  "bevy_derive",
@@ -650,7 +654,6 @@ dependencies = [
  "bevy_image",
  "bevy_input",
  "bevy_input_focus",
- "bevy_log",
  "bevy_math",
  "bevy_pbr",
  "bevy_platform",
@@ -668,21 +671,6 @@ dependencies = [
  "bevy_utils",
  "bevy_window",
  "bevy_winit",
-]
-
-[[package]]
-name = "bevy_kira_audio"
-version = "0.23.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "af5b8f1d4da8430903286ee3b9c4b95fb10ca54b0f7b90b94f106e7c1dde8e0b"
-dependencies = [
- "anyhow",
- "bevy",
- "bevy_math",
- "kira 0.9.6",
- "parking_lot",
- "thiserror 2.0.12",
- "uuid",
 ]
 
 [[package]]
@@ -724,7 +712,7 @@ dependencies = [
  "approx",
  "bevy_reflect",
  "derive_more",
- "glam 0.29.3",
+ "glam",
  "itertools 0.14.0",
  "libm",
  "rand 0.8.5",
@@ -766,7 +754,7 @@ version = "0.16.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8bb60c753b968a2de0fd279b76a3d19517695e771edb4c23575c7f92156315de"
 dependencies = [
- "glam 0.29.3",
+ "glam",
 ]
 
 [[package]]
@@ -843,7 +831,7 @@ dependencies = [
  "downcast-rs",
  "erased-serde",
  "foldhash",
- "glam 0.29.3",
+ "glam",
  "serde",
  "smallvec",
  "smol_str",
@@ -1201,7 +1189,25 @@ dependencies = [
  "proc-macro2",
  "quote",
  "regex",
- "rustc-hash",
+ "rustc-hash 1.1.0",
+ "shlex",
+ "syn",
+]
+
+[[package]]
+name = "bindgen"
+version = "0.72.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4f72209734318d0b619a5e0f5129918b848c416e122a3c4ce054e03cb87b726f"
+dependencies = [
+ "bitflags 2.9.1",
+ "cexpr",
+ "clang-sys",
+ "itertools 0.13.0",
+ "proc-macro2",
+ "quote",
+ "regex",
+ "rustc-hash 2.1.1",
  "shlex",
  "syn",
 ]
@@ -1525,11 +1531,11 @@ dependencies = [
 
 [[package]]
 name = "coreaudio-sys"
-version = "0.2.16"
+version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2ce857aa0b77d77287acc1ac3e37a05a8c95a2af3647d23b15f263bdaeb7562b"
+checksum = "ceec7a6067e62d6f931a2baf6f3a751f4a892595bcec1461a3c94ef9949864b6"
 dependencies = [
- "bindgen",
+ "bindgen 0.72.0",
 ]
 
 [[package]]
@@ -1542,7 +1548,7 @@ dependencies = [
  "fontdb",
  "log",
  "rangemap",
- "rustc-hash",
+ "rustc-hash 1.1.0",
  "rustybuzz",
  "self_cell",
  "smol_str",
@@ -1719,7 +1725,7 @@ checksum = "b0a05902cf601ed11d564128448097b98ebe3c6574bd7b6a653a3d56d54aa020"
 dependencies = [
  "const_panic",
  "encase_derive",
- "glam 0.29.3",
+ "glam",
  "thiserror 1.0.69",
 ]
 
@@ -1975,18 +1981,8 @@ checksum = "8babf46d4c1c9d92deac9f7be466f76dfc4482b6452fc5024b5e8daf6ffeb3ee"
 dependencies = [
  "bytemuck",
  "libm",
- "mint",
  "rand 0.8.5",
  "serde",
-]
-
-[[package]]
-name = "glam"
-version = "0.30.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6b46b9ca4690308844c644e7c634d68792467260e051c8543e0c7871662b3ba7"
-dependencies = [
- "mint",
 ]
 
 [[package]]
@@ -2143,7 +2139,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d9c9e718d32b6e6b2b32354e1b0367025efdd0b11d6a740b905ddf5db1074679"
 dependencies = [
  "constgebra",
- "glam 0.29.3",
+ "glam",
  "tinyvec",
 ]
 
@@ -2262,38 +2258,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2db585e1d738fc771bf08a151420d3ed193d9d895a36df7f6f8a9456b911ddc"
 
 [[package]]
-name = "kira"
-version = "0.9.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fb5a9f9dff5e262540b628b00d5e1a772270a962d6869f8695bb24832ff3b394"
-dependencies = [
- "cpal",
- "glam 0.29.3",
- "mint",
- "paste",
- "ringbuf",
- "send_wrapper",
- "symphonia",
- "triple_buffer",
-]
-
-[[package]]
-name = "kira"
-version = "0.10.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6e7f96b236a2d8b1ecebcd0e4e81462405392699e261f852cf930ea150f15abd"
-dependencies = [
- "atomic-arena",
- "glam 0.30.3",
- "mint",
- "paste",
- "rtrb",
- "send_wrapper",
- "symphonia",
- "triple_buffer",
-]
-
-[[package]]
 name = "lazy_static"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2362,9 +2326,9 @@ checksum = "13dc2df351e3202783a1fe0d44375f7295ffb4049267b0f3018346dc122a1d94"
 
 [[package]]
 name = "mach2"
-version = "0.4.2"
+version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "19b955cdeb2a02b9117f121ce63aa52d08ade45de53e48fe6a38b39c10f6f709"
+checksum = "d640282b302c0bb0a2a8e0233ead9035e3bed871f0b7e81fe4a1ec829765db44"
 dependencies = [
  "libc",
 ]
@@ -2424,12 +2388,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
 
 [[package]]
-name = "mint"
-version = "0.5.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e53debba6bda7a793e5f99b8dacf19e626084f525f7829104ba9898f367d85ff"
-
-[[package]]
 name = "naga"
 version = "24.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2444,7 +2402,7 @@ dependencies = [
  "indexmap",
  "log",
  "pp-rs",
- "rustc-hash",
+ "rustc-hash 1.1.0",
  "spirv",
  "strum",
  "termcolor",
@@ -2466,7 +2424,7 @@ dependencies = [
  "once_cell",
  "regex",
  "regex-syntax 0.8.5",
- "rustc-hash",
+ "rustc-hash 1.1.0",
  "thiserror 1.0.69",
  "tracing",
  "unicode-ident",
@@ -3245,12 +3203,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "19b30a45b0cd0bcca8037f3d0dc3421eaf95327a17cad11964fb8179b4fc4832"
 
 [[package]]
-name = "ringbuf"
-version = "0.3.3"
+name = "rodio"
+version = "0.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "79abed428d1fd2a128201cec72c5f6938e2da607c6f3745f769fabea399d950a"
+checksum = "e7ceb6607dd738c99bc8cb28eff249b7cd5c8ec88b9db96c0608c1480d140fb1"
 dependencies = [
- "crossbeam-utils",
+ "cpal",
+ "symphonia",
 ]
 
 [[package]]
@@ -3272,16 +3231,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6c20b6793b5c2fa6553b250154b78d6d0db37e72700ae35fad9387a46f487c97"
 
 [[package]]
-name = "rtrb"
-version = "0.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad8388ea1a9e0ea807e442e8263a699e7edcb320ecbcd21b4fa8ff859acce3ba"
-
-[[package]]
 name = "rustc-hash"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "08d43f7aa6b08d49f382cde6a7982047c3426db949b1424bc4b7ec9ae12c6ce2"
+
+[[package]]
+name = "rustc-hash"
+version = "2.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "357703d41365b4b27c590e3ed91eabb1b663f07c4c084095e60cbed4362dff0d"
 
 [[package]]
 name = "rustix"
@@ -3720,7 +3679,7 @@ version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "528bdd1f0e27b5dd9a4ededf154e824b0532731e4af73bb531de46276e0aab1e"
 dependencies = [
- "bindgen",
+ "bindgen 0.70.1",
  "cc",
  "cfg-if",
  "once_cell",
@@ -3756,15 +3715,6 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "wasm-bindgen",
-]
-
-[[package]]
-name = "triple_buffer"
-version = "8.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "420466259f9fa5decc654c490b9ab538400e5420df8237f84ecbe20368bcf72b"
-dependencies = [
- "crossbeam-utils",
 ]
 
 [[package]]
@@ -3853,7 +3803,6 @@ checksum = "458f7a779bf54acc9f347480ac654f68407d3aab21269a6e3c9f922acd9e2da9"
 dependencies = [
  "getrandom 0.3.3",
  "js-sys",
- "rand 0.9.2",
  "serde",
  "wasm-bindgen",
 ]
@@ -4041,7 +3990,7 @@ dependencies = [
  "parking_lot",
  "profiling",
  "raw-window-handle",
- "rustc-hash",
+ "rustc-hash 1.1.0",
  "smallvec",
  "thiserror 2.0.12",
  "wgpu-hal",
@@ -4084,7 +4033,7 @@ dependencies = [
  "range-alloc",
  "raw-window-handle",
  "renderdoc-sys",
- "rustc-hash",
+ "rustc-hash 1.1.0",
  "smallvec",
  "thiserror 2.0.12",
  "wasm-bindgen",

@@ -13,7 +13,7 @@ pub struct PlayerScore(pub i32);
 pub struct ScoreEvent(pub i32);
 
 /// Updates the score text in the UI based on the player's score.
-/// 
+///
 /// # Arguments
 /// * `query`: A query that retrieves the `ScoreText` component.
 /// * `events`: An event reader to read `ScoreEvent` events.

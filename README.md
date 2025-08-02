@@ -11,13 +11,13 @@ On a keyboard, use the `w`, `a`, `s`, and `d` keys or the arrow keys to turn and
 ## Development and Compiling
 
 In order to work on the code or compile it yourself, I recommend installing [Nix](https://nixos.org/download/).
-This way, you can call `nix develop #.{PLATFORM}` with the environment of your choosing to compile the game for that platform.
+This way, you can call `nix-shell {OPTIONAL: shell-PLATFORM.nix}` with the environment of your choosing to compile the game for that platform.
 
 Platforms:
 
-- Linux: `nix develop #.default`
-- Windows: `nix develop #.windows`
-- Web: `nix develop #.wasm`
+- Linux: `nix-shell`
+- Windows: `nix-shell shell-windows.nix`
+- Web: `nix-shell shell-wasm.nix`
 
 ## Credits
 

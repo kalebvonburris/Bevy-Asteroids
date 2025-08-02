@@ -60,7 +60,7 @@ pub fn setup_explosions(
 }
 
 /// Creates an explosion at the specified transform.
-/// 
+///
 /// # Arguments
 /// * `commands`: The `Commands` resource to spawn the explosion entity.
 /// * `transform`: The `Transform` where the explosion should be spawned.

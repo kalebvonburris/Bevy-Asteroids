@@ -1,16 +1,15 @@
 //! Audio playback for the main song in the game.
 
 use bevy::prelude::*;
-use bevy_kira_audio::prelude::*;
 
 /// Plays the main song of the game.
 ///
 /// # Arguments
-/// * `asset_server`: The `AssetServer` resource to load the sound asset.
-/// * `audio`: The `Audio` resource to play the sound.
-pub fn play_main_song(asset_server: Res<AssetServer>, audio: Res<Audio>) {
-    audio
-        .play(asset_server.load("embedded://audio/Eternity.mp3"))
-        .with_volume(0.7)
-        .looped();
+/// * `commands` - The Bevy commands to spawn the audio player.
+/// * `asset_server` - The Bevy asset server to load the audio file.
+pub fn play_main_song(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.spawn((
+        AudioPlayer::new(asset_server.load("audio/Eternity.mp3")),
+        PlaybackSettings::LOOP,
+    ));
 }

@@ -137,7 +137,7 @@ jobs:
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
       - name: Build release
-        run: nix develop .#default --command cargo build --release --no-default-features
+        run: nix-shell --run "cargo build --release --no-default-features"
       - name: Prepare release
         run: |
           strip target/release/${{ env.GAME_EXECUTABLE_NAME }}
@@ -174,7 +174,7 @@ jobs:
       with:
         github_access_token: ${{ secrets.GITHUB_TOKEN }}
     - name: Build release with Nix
-      run: nix develop .#windows --command cargo build --target=x86_64-pc-windows-gnu --release --no-default-features
+      run: nix-shell shell-windows.nix --run "cargo build --target=x86_64-pc-windows-gnu --release --no-default-features"
     - name: Zip release
       uses: vimtor/action-zip@v1
       with:
@@ -206,7 +206,7 @@ jobs:
         github_access_token: ${{ secrets.GITHUB_TOKEN }}
     - name: Build Release
       # Turn wasm-opt off as cargo already does that if possible
-      run: nix develop .#wasm --command bevy build --release --no-default-features true web --wasm-opt false --bundle
+      run: nix-shell shell-wasm.nix --command "bevy build --release --no-default-features true web --wasm-opt false --bundle"
     - name: Deploy
       if: ${{ !github.event.act }} # skip during local actions testing
       uses: peaceiris/actions-gh-pages@v4

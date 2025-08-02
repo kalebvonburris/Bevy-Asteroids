@@ -1,12 +1,10 @@
 //! Systems for the player ship in the game.
 
 use bevy::{prelude::*, window::PrimaryWindow};
-use bevy_kira_audio::AudioChannel;
 
 use crate::asteroid::Asteroid;
 
 use crate::audio::bullet::fire_bullet;
-use crate::audio::channels::{ExplosionChannel, LaserChannel};
 use crate::audio::ship::*;
 use crate::bullet::{Bullet, BulletConfig};
 use crate::explosion::{ExplosionConfig, create_explosion};
@@ -15,7 +13,7 @@ use crate::{lines_intersect, mesh_and_transform_to_points};
 use super::PlayerShip;
 
 /// Handles player input and movement, including shooting bullets.
-/// 
+///
 /// # Arguments
 /// * `commands`: The `Commands` resource to spawn bullets.
 /// * `keyboard_input`: The `ButtonInput<KeyCode>` resource to check for player input
@@ -31,7 +29,6 @@ pub fn player_input_and_movement(
     time: Res<Time>,
     bullet_config: Res<BulletConfig>,
     asset_server: Res<AssetServer>,
-    audio: Res<AudioChannel<LaserChannel>>,
 ) {
     for (mut player_ship, mut transform) in query.iter_mut() {
         if keyboard_input.any_pressed([KeyCode::KeyW, KeyCode::ArrowUp]) {
@@ -69,7 +66,7 @@ pub fn player_input_and_movement(
                 player_ship.speed,
                 &bullet_config,
             );
-            fire_bullet(&asset_server, &audio);
+            fire_bullet(&mut commands, &asset_server);
         }
     }
 }
@@ -104,7 +101,6 @@ pub fn check_ship_collisions(
     time: Res<Time>,
     meshes: Res<Assets<Mesh>>,
     asset_server: Res<AssetServer>,
-    audio: Res<AudioChannel<ExplosionChannel>>,
 ) {
     for (player_entity, mut player_ship, ship_transform, ship_mesh) in ships.iter_mut() {
         for (asteroid_entity, asteroid, asteroid_transform, asteroid_mesh) in asteroids.iter() {
@@ -149,9 +145,9 @@ pub fn check_ship_collisions(
                                     &time,
                                     false,
                                 );
-                                ship_destroyed(&asset_server, &audio);
+                                ship_destroyed(&mut commands, &asset_server);
                             } else {
-                                ship_hit(&asset_server, &audio);
+                                ship_hit(&mut commands, &asset_server);
                             }
 
                             // Blow up the asteroid

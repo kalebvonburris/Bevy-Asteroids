@@ -1,31 +1,27 @@
 //! Handles the audio for the bullet firing and striking an asteroid.
 
 use bevy::prelude::*;
-use bevy_kira_audio::prelude::*;
-
-use super::channels::ExplosionChannel;
 
 /// Plays a sound for the ship being hit.
 ///
 /// # Arguments
-/// * `asset_server`: The `AssetServer` resource to load the sound asset.
-/// * `audio`: The `AudioChannel<ExplosionChannel>` resource to play the sound.
-pub fn ship_hit(asset_server: &Res<AssetServer>, audio: &Res<AudioChannel<ExplosionChannel>>) {
-    audio
-        .play(asset_server.load("embedded://audio/player_hit.mp3"))
-        .with_volume(0.5);
+/// * `commands` - The Bevy commands to spawn the audio player.
+/// * `asset_server` - The Bevy asset server to load the audio file.
+pub fn ship_hit(commands: &mut Commands, asset_server: &Res<AssetServer>) {
+    commands.spawn((
+        AudioPlayer::new(asset_server.load("audio/player_hit.mp3")),
+        PlaybackSettings::REMOVE,
+    ));
 }
 
 /// Handles the audio for the ship being destroyed.
 ///
 /// # Arguments
-/// * `asset_server`: The `AssetServer` resource to load the sound asset.
-/// * `audio`: The `AudioChannel<ExplosionChannel>` resource to play the sound.
-pub fn ship_destroyed(
-    asset_server: &Res<AssetServer>,
-    audio: &Res<AudioChannel<ExplosionChannel>>,
-) {
-    audio
-        .play(asset_server.load("embedded://audio/player_destroyed.mp3"))
-        .with_volume(0.7);
+/// * `commands` - The Bevy commands to spawn the audio player.
+/// * `asset_server` - The Bevy asset server to load the audio file.
+pub fn ship_destroyed(commands: &mut Commands, asset_server: &Res<AssetServer>) {
+    commands.spawn((
+        AudioPlayer::new(asset_server.load("audio/player_destroyed.mp3")),
+        PlaybackSettings::REMOVE,
+    ));
 }

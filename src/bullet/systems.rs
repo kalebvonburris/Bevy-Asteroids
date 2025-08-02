@@ -1,13 +1,13 @@
 //! Systems for managing bullets in the game.
 
 use bevy::{prelude::*, window::PrimaryWindow};
-use bevy_kira_audio::AudioChannel;
 
 use crate::{
     asteroid::{Asteroid, AsteroidSize},
-    audio::{asteroid::destroy_asteroid, channels::ExplosionChannel},
-    explosion::{create_explosion, ExplosionConfig},
-    lines_intersect, mesh_and_transform_to_points, ui::systems::ScoreEvent,
+    audio::asteroid::destroy_asteroid,
+    explosion::{ExplosionConfig, create_explosion},
+    lines_intersect, mesh_and_transform_to_points,
+    ui::systems::ScoreEvent,
 };
 
 use super::Bullet;
@@ -75,7 +75,6 @@ pub fn check_bullet_collisions(
     asteroids: Query<(Entity, &Asteroid, &Transform, &Mesh2d)>,
     bullets: Query<(Entity, &Bullet, &Transform, &Mesh2d)>,
     asset_server: Res<AssetServer>,
-    audio: Res<AudioChannel<ExplosionChannel>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     explosion_config: Res<ExplosionConfig>,
@@ -134,7 +133,7 @@ pub fn check_bullet_collisions(
                         );
 
                         // Play the asteroid destruction sound
-                        destroy_asteroid(asteroid.size, &asset_server, &audio);
+                        destroy_asteroid(&mut commands, asteroid.size, &asset_server);
 
                         // Create a score event
                         commands.send_event(ScoreEvent(1));

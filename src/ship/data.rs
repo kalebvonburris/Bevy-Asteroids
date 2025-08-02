@@ -23,7 +23,7 @@ pub struct PlayerShip {
 }
 
 /// Sets up the player ship with a mesh and material.
-/// 
+///
 /// # Arguments
 /// * `commands`: The `Commands` resource to spawn the player ship entity.
 /// * `meshes`: The `Assets<Mesh>` resource to create the player ship mesh.

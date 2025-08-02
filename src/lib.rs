@@ -1,5 +1,5 @@
 //! # Bevy Asteroids
-//! 
+//!
 //! A 2D space shooter game built with Bevy.
 
 // Many bevy systems require >7 arguments, which is not allowed by clippy.
@@ -12,14 +12,16 @@ pub mod explosion;
 pub mod ship;
 pub mod ui;
 
-use crate::{audio::channels, ui::{setup::setup_ui, systems::{update_score, PlayerScore, ScoreEvent}}};
+use crate::ui::{
+    setup::setup_ui,
+    systems::{PlayerScore, ScoreEvent, update_score},
+};
 use asteroid::{check_asteroid_bounds, move_asteroids, spawn_asteroids};
 use audio::main_song::play_main_song;
 use bevy::{
-    app::PanicHandlerPlugin, diagnostic::DiagnosticsPlugin, log::LogPlugin, prelude::*,
+    app::PanicHandlerPlugin, diagnostic::DiagnosticsPlugin, prelude::*,
     render::mesh::VertexAttributeValues,
 };
-use bevy_kira_audio::{AudioApp, AudioPlugin};
 use bullet::{check_bullet_bounds, check_bullet_collisions, move_bullets, setup_bullet};
 use explosion::{setup_explosions, systems::explosion_system};
 use ship::*;
@@ -52,24 +54,22 @@ impl Plugin for AsteroidsPlugin {
             ..default()
         });
 
-        if !cfg!(debug_assertions) {
-            default_plugins = default_plugins.disable::<LogPlugin>();
-        }
-
         // Disable unnecessary plugins
         default_plugins = default_plugins
             .disable::<PanicHandlerPlugin>()
             .disable::<DiagnosticsPlugin>();
 
-        app.add_plugins((default_plugins, AudioPlugin));
-
-        // Add audio channels
-        app.add_audio_channel::<channels::LaserChannel>();
-        app.add_audio_channel::<channels::ExplosionChannel>();
+        app.add_plugins(default_plugins);
 
         app.add_systems(
             Startup,
-            (setup_player, setup_bullet, setup_explosions, play_main_song, setup_ui),
+            (
+                setup_player,
+                setup_bullet,
+                setup_explosions,
+                play_main_song,
+                setup_ui,
+            ),
         );
 
         app.add_systems(
@@ -112,13 +112,13 @@ fn spawn_camera(mut commands: Commands) {
 }
 
 /// Checks if two lines intersect.
-/// 
+///
 /// # Arguments
 /// * `p1`: The first point of the first line.
 /// * `p2`: The second point of the first line.
 /// * `p3`: The first point of the second line.
 /// * `p4`: The second point of the second line.
-/// 
+///
 /// # Returns
 /// An `Option<Vec2>` that contains the intersection point if the lines intersect, or `None` if they do not.
 pub fn lines_intersect(p1: Vec2, p2: Vec2, p3: Vec2, p4: Vec2) -> Option<Vec2> {
@@ -141,11 +141,11 @@ pub fn lines_intersect(p1: Vec2, p2: Vec2, p3: Vec2, p4: Vec2) -> Option<Vec2> {
 }
 
 /// Converts a mesh and its transform into a list of points in absolute coordinates.
-/// 
+///
 /// # Arguments
 /// * `mesh`: The `Mesh` to convert.
 /// * `transform`: The `Transform` to apply to the mesh points.
-/// 
+///
 /// # Returns
 /// A `Vec<Vec2>` containing the transformed, absolute points of the mesh.
 pub fn mesh_and_transform_to_points(mesh: &Mesh, transform: &Transform) -> Vec<Vec2> {
