@@ -2,6 +2,10 @@
 
 Simple asteroids clone made in Bevy.
 
+Find the web version here: <https://kalebvonburris.github.io/Bevy-Asteroids/>
+
+Or download a release from here: <https://github.com/kalebvonburris/Bevy-Asteroids/releases/latest>
+
 ## Controls
 
 ### PC

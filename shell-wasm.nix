@@ -7,7 +7,7 @@
 }:
 
 let
-  rustToolchain = pkgs.rust-bin.stable.latest.default.override {
+  rustToolchain = pkgs.rust-bin.nightly.latest.default.override {
     targets = [ "wasm32-unknown-unknown" ];
     extensions = [ "rust-src" ];
   };

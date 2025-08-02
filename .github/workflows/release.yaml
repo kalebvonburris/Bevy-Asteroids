@@ -206,7 +206,7 @@ jobs:
         github_access_token: ${{ secrets.GITHUB_TOKEN }}
     - name: Build Release
       # Turn wasm-opt off as cargo already does that if possible
-      run: nix-shell shell-wasm.nix --command "bevy build --release --no-default-features true web --wasm-opt false --bundle"
+      run: nix-shell shell-wasm.nix --run "bevy build --release --no-default-features true web --wasm-opt false --bundle" 
     - name: Deploy
       if: ${{ !github.event.act }} # skip during local actions testing
       uses: peaceiris/actions-gh-pages@v4
