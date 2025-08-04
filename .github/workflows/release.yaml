@@ -218,7 +218,7 @@ jobs:
         nix-channel --update
     - name: Build Release
       # Turn wasm-opt off as cargo already does that if possible
-      run: nix-shell shell-wasm.nix --run "bevy build --release --no-default-features true web --wasm-opt false --bundle" 
+      run: nix-shell shell-wasm.nix --pure --run "RUSTFLAGS='--cfg getrandom_backend=\"wasm_js\"' bevy build --release --no-default-features true web --wasm-opt false --bundle"
     - name: Deploy
       if: ${{ !github.event.act }} # skip during local actions testing
       uses: peaceiris/actions-gh-pages@v4

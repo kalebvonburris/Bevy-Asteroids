@@ -56,10 +56,6 @@ in pkgs.mkShell {
     export LD_LIBRARY_PATH="${pkgs.glibc}/lib:${pkgs.gcc.cc.lib}/lib:${pkgs.openssl.out}/lib"
     export PKG_CONFIG_PATH="${pkgs.openssl.dev}/lib/pkgconfig"
     
-    # Use a temporary directory for cargo target to avoid impure path issues
-    export CARGO_TARGET_DIR="/tmp/cargo-target-$(whoami)"
-    mkdir -p "$CARGO_TARGET_DIR"
-
     # Add Cargo bin directory to PATH
     export PATH="$CARGO_HOME/bin:$PATH"
 
