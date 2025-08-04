@@ -136,6 +136,10 @@ jobs:
         uses: cachix/install-nix-action@v31
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Update Nix
+        run: |
+          nix-channel --add https://nixos.org/channels/nixpkgs-unstable
+          nix-channel --update
       - name: Build release
         run: nix-shell --run "cargo build --release --no-default-features"
       - name: Prepare release
@@ -173,6 +177,10 @@ jobs:
       uses: cachix/install-nix-action@v31
       with:
         github_access_token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Update Nix
+      run: |
+        nix-channel --add https://nixos.org/channels/nixpkgs-unstable
+        nix-channel --update
     - name: Build release with Nix
       run: nix-shell shell-windows.nix --run "cargo build --target=x86_64-pc-windows-gnu --release --no-default-features"
     - name: Zip release
@@ -204,6 +212,10 @@ jobs:
       uses: cachix/install-nix-action@v31
       with:
         github_access_token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Update Nix
+      run: |
+        nix-channel --add https://nixos.org/channels/nixpkgs-unstable
+        nix-channel --update
     - name: Build Release
       # Turn wasm-opt off as cargo already does that if possible
       run: nix-shell shell-wasm.nix --run "bevy build --release --no-default-features true web --wasm-opt false --bundle" 

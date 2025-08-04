@@ -9,6 +9,13 @@ pub struct Bullet {
 }
 
 impl Bullet {
+    /// Creates a new bullet with the specified speed.
+    /// 
+    /// # Arguments
+    /// * `commands`: The `Commands` resource to spawn the bullet entity.
+    /// * `transform`: The `Transform` of the bullet, which determines its position and rotation.
+    /// * `speed`: The speed of the bullet.
+    /// * `bullet_config`: The `BulletConfig` resource that holds the bullet's mesh
     pub fn spawn_bullet(
         commands: &mut Commands,
         mut transform: Transform,
@@ -27,10 +34,19 @@ impl Bullet {
                 Mesh2d(bullet_config.mesh.clone()),
                 MeshMaterial2d(bullet_config.material.clone()),
                 transform,
-            ))
-            .insert(Bullet {
-                speed: 55.0 + speed,
-            });
+                Bullet { speed: 55.0 + speed },
+            ));
+    }
+}
+
+/// Despawns all bullets in the game.
+/// 
+/// # Arguments
+/// * `commands`: The `Commands` resource to despawn bullets.
+/// * `query`: A query that retrieves all entities with the `Bullet` component.
+pub fn despawn_bullets(mut commands: Commands, query: Query<Entity, With<Bullet>>) {
+    for entity in query.iter() {
+        commands.entity(entity).despawn();
     }
 }
 

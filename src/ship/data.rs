@@ -54,3 +54,17 @@ pub fn setup_player(
         Transform::from_translation(Vec3::new(0.0, 0.0, 10.0)),
     ));
 }
+
+/// Deletes the player ship entity from the game.
+/// 
+/// # Arguments
+/// * `commands`: The `Commands` resource to despawn the player ship entity.
+/// * `player_query`: A query to find the player ship entity.
+pub fn despawn_player(
+    mut commands: Commands,
+    player_query: Query<Entity, With<PlayerShip>>,
+) {
+    for entity in player_query.iter() {
+        commands.entity(entity).despawn();
+    }
+}

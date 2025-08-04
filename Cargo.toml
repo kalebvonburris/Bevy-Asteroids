@@ -22,10 +22,11 @@ bevy = { version = "0.16.1", default-features = false, features = [
     "bevy_sprite", 
     "bevy_window", 
     "bevy_audio",
+    "bevy_ui",
+    "bevy_state",
     "mp3",
     "multi_threaded", 
     "x11", 
-    "bevy_ui", 
     "default_font", 
     "bevy_text"
 ]}
@@ -34,17 +35,21 @@ bevy = { version = "0.16.1", default-features = false, features = [
 getrandom = { version = "0.3.3", features = ["wasm_js"] }
 bevy = { version = "0.16.1", default-features = false, features = [
     "std",
+    "web",
+    "bevy_winit",
     "bevy_color", 
     "bevy_scene", 
     "bevy_sprite", 
     "bevy_window", 
     "bevy_audio",
+    "bevy_text",
+    "bevy_ui",
+    "bevy_state",
     "mp3",
     "multi_threaded",
     "webgl2", 
-    "bevy_ui", 
-    "default_font", 
-    "bevy_text"
+    "default_font",
+    "zstd",
 ] }
 
 # Compile with Performance Optimizations:

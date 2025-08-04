@@ -12,10 +12,6 @@ pub mod explosion;
 pub mod ship;
 pub mod ui;
 
-use crate::ui::{
-    setup::setup_ui,
-    systems::{PlayerScore, ScoreEvent, update_score},
-};
 use asteroid::{check_asteroid_bounds, move_asteroids, spawn_asteroids};
 use audio::main_song::play_main_song;
 use bevy::{
@@ -26,24 +22,13 @@ use bullet::{check_bullet_bounds, check_bullet_collisions, move_bullets, setup_b
 use explosion::{setup_explosions, systems::explosion_system};
 use ship::*;
 
+use crate::{asteroid::despawn_asteroids, bullet::despawn_bullets, ui::{despawn_game_ui, despawn_main_menu, handle_main_menu_input, restart_score, setup_game_ui, setup_main_menu, update_score, PlayerScore, ScoreEvent}};
+
 /// The main plugin for the game, which sets up the game state and systems.
 pub struct AsteroidsPlugin;
 
 impl Plugin for AsteroidsPlugin {
     fn build(&self, app: &mut App) {
-        // Make the background black.
-        app.insert_resource(ClearColor(Color::BLACK));
-
-        // Set the fixed time step - this is how often we
-        // check to see if we spawn asteroids
-        app.insert_resource(Time::<Fixed>::from_seconds(0.5));
-
-        // Insert the player's score resource and add the event.
-        app.insert_resource(PlayerScore(0));
-        app.add_event::<ScoreEvent>();
-
-        app.add_systems(Startup, spawn_camera);
-
         // Setup default plugins
         let mut default_plugins = DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
@@ -61,37 +46,88 @@ impl Plugin for AsteroidsPlugin {
 
         app.add_plugins(default_plugins);
 
+        // Start the game in the main menu state.
+        app.insert_state(GameState::MainMenu);
+
+        // Add GameState
+        app.init_state::<GameState>();
+
+        // Make the background black.
+        app.insert_resource(ClearColor(Color::BLACK));
+
+        // Set the fixed time step - this is how often we
+        // check to see if we spawn asteroids
+        app.insert_resource(Time::<Fixed>::from_seconds(0.5));
+
+        // Insert the player's score resource and add the event.
+        app.insert_resource(PlayerScore(0));
+        app.add_event::<ScoreEvent>();
+
+        // Setup the bullet and explosion resources.
+        app.add_systems(PostStartup, (
+            setup_bullet,
+            setup_explosions,
+        ));
+
+
+        // Startup -> Loading -> Main Menu
+        app.add_systems(OnEnter(GameState::MainMenu), setup_main_menu);
+        app.add_systems(Update, (handle_main_menu_input).run_if(in_state(GameState::MainMenu)));
+
+        // Main Menu -> Game
+        app.add_systems(OnExit(GameState::MainMenu), despawn_main_menu);
         app.add_systems(
-            Startup,
+            OnEnter(GameState::Game),
             (
                 setup_player,
-                setup_bullet,
-                setup_explosions,
-                play_main_song,
-                setup_ui,
-            ),
+                setup_game_ui,
+                restart_score,
+            )
         );
 
+        // Game -> Game Over
+
+        // Systems for removing the player and UI when the game is over.
+        // Note: The player is removed in the `check_ship_collisions` system.
+        app.add_systems(OnExit(GameState::Game), despawn_game_ui);
+        // Keep asteroids and bullets around for the game over screen.
+        app.add_systems(
+            OnExit(GameState::GameOver),
+            (
+                despawn_asteroids,
+                despawn_bullets,
+            )
+        );
+
+        // Add the camera and main song systems. This has to be done after the
+        // Startup stage, otherwise the loading of assets will break WASM builds.
+        app.add_systems(PostStartup, (spawn_camera, play_main_song));
+
+        // Game systems that run until the game is over.
+        app.add_systems(Update, (
+            // Player ship
+            check_ship_bounds,
+            player_input_and_movement,
+            check_ship_collisions,
+            color_player,
+            // Score and UI
+            update_score,
+        ).run_if(in_state(GameState::Game)));
+
+        // Game systems that run regardless of the game state. Allows for an interactive game over screen.
         app.add_systems(
             Update,
             (
                 // Asteroids
                 move_asteroids,
                 check_asteroid_bounds,
-                // Player ship
-                check_ship_bounds,
-                player_input_and_movement,
-                check_ship_collisions,
-                color_player,
                 // Bullets
                 move_bullets,
                 check_bullet_bounds,
                 check_bullet_collisions,
                 // Explosions
                 explosion_system,
-                // Score and UI
-                update_score,
-            ),
+            ).run_if(in_state(GameState::Game).or(in_state(GameState::GameOver))),
         );
 
         // Fixed systems
@@ -100,11 +136,23 @@ impl Plugin for AsteroidsPlugin {
             (
                 spawn_asteroids
                     .before(move_asteroids)
-                    .before(check_asteroid_bounds),
-                heal_player,
+                    .before(check_asteroid_bounds)
+                    // Only spawn asteroids if we aren't in the main menu.
+                    .run_if(in_state(GameState::Game).or(in_state(GameState::GameOver))),
+                // Only run the heal player system if the game is in progress.
+                (heal_player).run_if(in_state(GameState::Game)),
             ),
         );
     }
+}
+
+/// The state of the user interface.
+#[derive(States, Default, Debug, Clone, PartialEq, Eq, Hash)]
+pub enum GameState {
+    #[default]
+    MainMenu,
+    Game,
+    GameOver,
 }
 
 fn spawn_camera(mut commands: Commands) {

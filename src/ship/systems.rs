@@ -8,7 +8,7 @@ use crate::audio::bullet::fire_bullet;
 use crate::audio::ship::*;
 use crate::bullet::{Bullet, BulletConfig};
 use crate::explosion::{ExplosionConfig, create_explosion};
-use crate::{lines_intersect, mesh_and_transform_to_points};
+use crate::{lines_intersect, mesh_and_transform_to_points, GameState};
 
 use super::PlayerShip;
 
@@ -93,6 +93,17 @@ pub fn check_ship_bounds(
     }
 }
 
+/// Checks for collisions between the player ship and asteroids, and handles the destruction of both.
+/// 
+/// # Arguments
+/// * `commands`: The `Commands` resource to despawn the player ship and asteroids
+/// * `asteroids`: A query that retrieves every `Asteroid` and its `Transform`.
+/// * `ships`: A query that retrieves the player ship's `PlayerShip`, its `Transform`, and its `Mesh2d`.
+/// * `explosion_config`: The `ExplosionConfig` resource to create explosions.
+/// * `time`: The `Time` resource to determine the frequency of asteroid spawning.
+/// * `meshes`: The `Assets<Mesh>` resource to get the mesh of the asteroids and ships.
+/// * `asset_server`: The `AssetServer` resource to play sound effects.
+/// * `next_state`: The `NextState<GameState>` resource to change the game state to `GameOver` if the player ship is destroyed.
 pub fn check_ship_collisions(
     mut commands: Commands,
     asteroids: Query<(Entity, &Asteroid, &Transform, &Mesh2d)>,
@@ -101,6 +112,7 @@ pub fn check_ship_collisions(
     time: Res<Time>,
     meshes: Res<Assets<Mesh>>,
     asset_server: Res<AssetServer>,
+    mut next_state: ResMut<NextState<GameState>>,
 ) {
     for (player_entity, mut player_ship, ship_transform, ship_mesh) in ships.iter_mut() {
         for (asteroid_entity, asteroid, asteroid_transform, asteroid_mesh) in asteroids.iter() {
@@ -146,6 +158,7 @@ pub fn check_ship_collisions(
                                     false,
                                 );
                                 ship_destroyed(&mut commands, &asset_server);
+                                next_state.set(GameState::GameOver);
                             } else {
                                 ship_hit(&mut commands, &asset_server);
                             }
