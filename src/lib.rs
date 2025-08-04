@@ -46,11 +46,8 @@ impl Plugin for AsteroidsPlugin {
 
         app.add_plugins(default_plugins);
 
-        // Start the game in the main menu state.
-        app.insert_state(GameState::MainMenu);
-
         // Add GameState
-        app.init_state::<GameState>();
+        app.init_state::<GameState>();        
 
         // Make the background black.
         app.insert_resource(ClearColor(Color::BLACK));
@@ -68,7 +65,6 @@ impl Plugin for AsteroidsPlugin {
             setup_bullet,
             setup_explosions,
         ));
-
 
         // Startup -> Loading -> Main Menu
         app.add_systems(OnEnter(GameState::MainMenu), setup_main_menu);

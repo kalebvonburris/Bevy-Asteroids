@@ -1,5 +1,4 @@
 /target
 /.xwin-cache
 /dist
-/.cargo
 /.nix-cargo
