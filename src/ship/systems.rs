@@ -8,7 +8,7 @@ use crate::audio::bullet::fire_bullet;
 use crate::audio::ship::*;
 use crate::bullet::{Bullet, BulletConfig};
 use crate::explosion::{ExplosionConfig, create_explosion};
-use crate::{lines_intersect, mesh_and_transform_to_points, GameState};
+use crate::{GameState, lines_intersect, mesh_and_transform_to_points};
 
 use super::PlayerShip;
 
@@ -94,7 +94,7 @@ pub fn check_ship_bounds(
 }
 
 /// Checks for collisions between the player ship and asteroids, and handles the destruction of both.
-/// 
+///
 /// # Arguments
 /// * `commands`: The `Commands` resource to despawn the player ship and asteroids
 /// * `asteroids`: A query that retrieves every `Asteroid` and its `Transform`.

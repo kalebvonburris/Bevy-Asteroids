@@ -179,14 +179,11 @@ pub fn spawn_asteroids(
 }
 
 /// Despawns all asteroids in the game.
-/// 
+///
 /// # Arguments
 /// * `commands`: The `Commands` resource to despawn asteroids.
 /// * `query`: A query that retrieves all entities with the `Asteroid` component.
-pub fn despawn_asteroids(
-    mut commands: Commands,
-    query: Query<Entity, With<Asteroid>>,
-) {
+pub fn despawn_asteroids(mut commands: Commands, query: Query<Entity, With<Asteroid>>) {
     for entity in query.iter() {
         commands.entity(entity).despawn();
     }

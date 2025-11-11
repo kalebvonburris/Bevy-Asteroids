@@ -18,11 +18,11 @@ use bevy::{
     app::PanicHandlerPlugin, diagnostic::DiagnosticsPlugin, prelude::*,
     render::mesh::VertexAttributeValues,
 };
-use bullet::{check_bullet_bounds, check_bullet_collisions, move_bullets, setup_bullet};
+use bullet::BulletPlugin;
 use explosion::{setup_explosions, systems::explosion_system};
 use ship::*;
 
-use crate::{asteroid::despawn_asteroids, bullet::despawn_bullets, ui::{despawn_game_ui, despawn_main_menu, handle_main_menu_input, restart_score, setup_game_ui, setup_main_menu, update_score, PlayerScore, ScoreEvent}};
+use crate::{asteroid::despawn_asteroids, bullet::despawn_bullets, ui::GameUiPlugin};
 
 /// The main plugin for the game, which sets up the game state and systems.
 pub struct AsteroidsPlugin;
@@ -47,7 +47,7 @@ impl Plugin for AsteroidsPlugin {
         app.add_plugins(default_plugins);
 
         // Add GameState
-        app.init_state::<GameState>();        
+        app.init_state::<GameState>();
 
         // Make the background black.
         app.insert_resource(ClearColor(Color::BLACK));
@@ -56,43 +56,21 @@ impl Plugin for AsteroidsPlugin {
         // check to see if we spawn asteroids
         app.insert_resource(Time::<Fixed>::from_seconds(0.5));
 
-        // Insert the player's score resource and add the event.
-        app.insert_resource(PlayerScore(0));
-        app.add_event::<ScoreEvent>();
-
         // Setup the bullet and explosion resources.
-        app.add_systems(PostStartup, (
-            setup_bullet,
-            setup_explosions,
-        ));
+        app.add_systems(PostStartup, setup_explosions);
 
         // Startup -> Loading -> Main Menu
-        app.add_systems(OnEnter(GameState::MainMenu), setup_main_menu);
-        app.add_systems(Update, (handle_main_menu_input).run_if(in_state(GameState::MainMenu)));
+        app.add_plugins(GameUiPlugin);
 
         // Main Menu -> Game
-        app.add_systems(OnExit(GameState::MainMenu), despawn_main_menu);
-        app.add_systems(
-            OnEnter(GameState::Game),
-            (
-                setup_player,
-                setup_game_ui,
-                restart_score,
-            )
-        );
+        app.add_systems(OnEnter(GameState::Game), setup_player);
 
         // Game -> Game Over
 
-        // Systems for removing the player and UI when the game is over.
-        // Note: The player is removed in the `check_ship_collisions` system.
-        app.add_systems(OnExit(GameState::Game), despawn_game_ui);
         // Keep asteroids and bullets around for the game over screen.
         app.add_systems(
             OnExit(GameState::GameOver),
-            (
-                despawn_asteroids,
-                despawn_bullets,
-            )
+            (despawn_asteroids, despawn_bullets),
         );
 
         // Add the camera and main song systems. This has to be done after the
@@ -100,15 +78,19 @@ impl Plugin for AsteroidsPlugin {
         app.add_systems(PostStartup, (spawn_camera, play_main_song));
 
         // Game systems that run until the game is over.
-        app.add_systems(Update, (
-            // Player ship
-            check_ship_bounds,
-            player_input_and_movement,
-            check_ship_collisions,
-            color_player,
-            // Score and UI
-            update_score,
-        ).run_if(in_state(GameState::Game)));
+        app.add_systems(
+            Update,
+            (
+                // Player ship
+                check_ship_bounds,
+                player_input_and_movement,
+                check_ship_collisions,
+                color_player,
+            )
+                .run_if(in_state(GameState::Game)),
+        );
+
+        app.add_plugins(BulletPlugin);
 
         // Game systems that run regardless of the game state. Allows for an interactive game over screen.
         app.add_systems(
@@ -117,13 +99,10 @@ impl Plugin for AsteroidsPlugin {
                 // Asteroids
                 move_asteroids,
                 check_asteroid_bounds,
-                // Bullets
-                move_bullets,
-                check_bullet_bounds,
-                check_bullet_collisions,
                 // Explosions
                 explosion_system,
-            ).run_if(in_state(GameState::Game).or(in_state(GameState::GameOver))),
+            )
+                .run_if(in_state(GameState::Game).or(in_state(GameState::GameOver))),
         );
 
         // Fixed systems
