@@ -76,9 +76,7 @@ lto = true
 # Strips all debugging information from the binary to slightly reduce file size.
 # This is the default for release builds, but we set it here to be explicit.
 strip = true
-# Use abort to reduce binary size.
-panic = "abort"
-debug = false
+panic = 'abort'
 
 [profile.release.package."*"]
 opt-level = 3
