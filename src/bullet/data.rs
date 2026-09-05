@@ -2,6 +2,14 @@
 
 use bevy::{asset::RenderAssetUsages, prelude::*, render::mesh::PrimitiveTopology};
 
+use crate::ship::SHIP_RADIUS;
+
+/// The speed a bullet leaves the ship at, before the ship's own speed is added.
+pub const BULLET_BASE_SPEED: f32 = 55.0;
+
+/// The bullet's collision radius, used to decide when it has left the screen.
+pub const BULLET_RADIUS: f32 = 1.75;
+
 /// A bullet fired from the `PlayerShip`.
 #[derive(Component)]
 pub struct Bullet {
@@ -9,53 +17,53 @@ pub struct Bullet {
 }
 
 impl Bullet {
-    /// Creates a new bullet with the specified speed.
+    /// Spawns a bullet at the ship's nose, inheriting the ship's speed.
     ///
     /// # Arguments
     /// * `commands`: The `Commands` resource to spawn the bullet entity.
-    /// * `transform`: The `Transform` of the bullet, which determines its position and rotation.
-    /// * `speed`: The speed of the bullet.
-    /// * `bullet_config`: The `BulletConfig` resource that holds the bullet's mesh
+    /// * `transform`: The `Transform` of the ship, which determines the bullet's position and rotation.
+    /// * `ship_speed`: The speed of the ship, added on top of [`BULLET_BASE_SPEED`].
+    /// * `bullet_config`: The [`BulletConfig`] that holds the bullet's mesh and material.
     pub fn spawn_bullet(
         commands: &mut Commands,
         mut transform: Transform,
-        speed: f32,
-        bullet_config: &Res<BulletConfig>,
+        ship_speed: f32,
+        bullet_config: &BulletConfig,
     ) {
-        // Modify the transform to start the bullet at the ship's nose
+        // Move the bullet forward out of the ship's nose so it does not start
+        // inside the ship's own mesh.
         let angle = transform.rotation.to_euler(EulerRot::ZXY).0;
-
-        // Move the bullet 5 units forward in the direction of the ship's rotation
-        transform.translation.x += -angle.sin() * 5.0;
-        transform.translation.y += angle.cos() * 5.0;
+        transform.translation.x += -angle.sin() * SHIP_RADIUS;
+        transform.translation.y += angle.cos() * SHIP_RADIUS;
 
         commands.spawn((
             Mesh2d(bullet_config.mesh.clone()),
             MeshMaterial2d(bullet_config.material.clone()),
             transform,
             Bullet {
-                speed: 55.0 + speed,
+                speed: BULLET_BASE_SPEED + ship_speed,
             },
         ));
     }
 }
 
-/// Despawns all bullets in the game.
-///
-/// # Arguments
-/// * `commands`: The `Commands` resource to despawn bullets.
-/// * `query`: A query that retrieves all entities with the `Bullet` component.
-pub fn despawn_bullets(mut commands: Commands, query: Query<Entity, With<Bullet>>) {
-    for entity in query.iter() {
-        commands.entity(entity).despawn();
-    }
+/// An event fired when a bullet's mesh intersects an asteroid's mesh.
+#[derive(Event)]
+pub struct BulletHit {
+    /// The bullet that landed the hit.
+    pub bullet: Entity,
+    /// The asteroid that was hit.
+    pub asteroid: Entity,
+    /// The point of contact, used to place the explosion.
+    pub point: Transform,
 }
 
-/// Configuration for the bullet, including its mesh and material.
+/// Builds the shared bullet mesh and material and stores them in [`BulletConfig`].
 ///
 /// # Arguments
-/// * `mesh`: The mesh used for the bullet.
-/// * `material`: The material used for the bullet.
+/// * `commands`: The `Commands` resource to insert the bullet configuration.
+/// * `meshes`: The `Assets<Mesh>` resource to create the bullet mesh.
+/// * `materials`: The `Assets<ColorMaterial>` resource to create the bullet material.
 pub fn setup_bullet(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -67,24 +75,17 @@ pub fn setup_bullet(
             vec![Vec3::new(0.0, 0.0, 2.0), Vec3::new(0.0, 5.0, 2.0)],
         );
 
-    let bullet_material = materials.add(ColorMaterial::from(Color::LinearRgba(LinearRgba::new(
-        1.0, 0.2, 0.2, 1.0,
-    )))); // That's a disgusting amount of closing parens :(
-
-    let bullet_config = BulletConfig::new(meshes.add(bullet_mesh), bullet_material);
-
-    commands.insert_resource(bullet_config);
+    commands.insert_resource(BulletConfig {
+        mesh: meshes.add(bullet_mesh),
+        material: materials.add(ColorMaterial::from(Color::linear_rgb(1.0, 0.2, 0.2))),
+    });
 }
 
 /// Configuration for the bullet; includes its mesh and material.
+///
+/// Every bullet shares one mesh and one material rather than building its own.
 #[derive(Resource)]
 pub struct BulletConfig {
     pub mesh: Handle<Mesh>,
     pub material: Handle<ColorMaterial>,
-}
-
-impl BulletConfig {
-    pub fn new(mesh: Handle<Mesh>, material: Handle<ColorMaterial>) -> Self {
-        Self { mesh, material }
-    }
 }

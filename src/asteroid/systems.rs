@@ -1,6 +1,7 @@
 //! Systems for managing asteroids in the game.
 
-use super::{Asteroid, AsteroidSize};
+use super::{Asteroid, AsteroidSize, RunTimer, SpawnAsteroid};
+use crate::out_of_bounds;
 use bevy::{prelude::*, window::PrimaryWindow};
 
 /// Moves the asteroids based on their direction. Speed is determined by
@@ -11,12 +12,11 @@ use bevy::{prelude::*, window::PrimaryWindow};
 /// * `query`: A query that retrieves every `Asteroid` and its `Transform`.
 pub fn move_asteroids(time: Res<Time>, mut query: Query<(&Asteroid, &mut Transform)>) {
     for (asteroid, mut transform) in query.iter_mut() {
-        transform.translation +=
-            Vec3::new(asteroid.direction.x, asteroid.direction.y, 0.0) * time.delta_secs();
+        transform.translation += asteroid.direction.extend(0.0) * time.delta_secs();
     }
 }
 
-/// Checks and fixes asteroids so that they are within the bounds of the game window.
+/// Despawns asteroids once they have drifted off the edge of the game window.
 ///
 /// # Arguments
 /// * `commands`: The `Commands` resource to despawn asteroids that are out of bounds.
@@ -24,56 +24,46 @@ pub fn move_asteroids(time: Res<Time>, mut query: Query<(&Asteroid, &mut Transfo
 /// * `window`: A query that retrieves the primary window to get its size.
 pub fn check_asteroid_bounds(
     mut commands: Commands,
-    mut query: Query<(Entity, &Asteroid, &Transform)>,
+    query: Query<(Entity, &Asteroid, &Transform)>,
     window: Query<&Window, With<PrimaryWindow>>,
 ) {
-    // Get the window size
     let window = window.single().unwrap();
+    let half_window = Vec2::new(window.width(), window.height()) / 2.0;
 
-    let window_size = Vec2::new(window.width(), window.height());
-
-    for (entity, asteroid, transform) in query.iter_mut() {
-        // Get the asteroid width
-        let asteroid_diameter = asteroid.size.diameter();
-
-        // Check if the asteroid is out of bounds
-        // If the asteroid is out of bounds, despawn it - it will never return to the screen
-        if transform.translation.x + asteroid_diameter < -window_size.x / 2.0
-            || transform.translation.x - asteroid_diameter > window_size.x / 2.0
-            || transform.translation.y + asteroid_diameter < -window_size.y / 2.0
-            || transform.translation.y - asteroid_diameter > window_size.y / 2.0
-        {
-            // Remove the asteroid
+    for (entity, asteroid, transform) in query.iter() {
+        // An asteroid that leaves the screen never comes back, so drop it.
+        if out_of_bounds(transform.translation, asteroid.size.radius(), half_window) {
             commands.entity(entity).despawn();
         }
     }
 }
 
-/// Spawns new asteroids based on the game state and window size.
+/// Spawns new asteroids just off the edges of the window, ramping up in number,
+/// size, and speed the longer the game has been running.
 ///
 /// # Arguments
-/// * `commands`: The `Commands` resource to spawn new asteroids.
-/// * `meshes`: The `Assets<Mesh>` resource to create the asteroid mesh.
-/// * `materials`: The `Assets<ColorMaterial>` resource to create the asteroid material.
+/// * `commands`: The `Commands` resource to trigger [`SpawnAsteroid`] events.
 /// * `window`: A query that retrieves the primary window to get its size.
-/// * `time`: The `Time` resource to determine the frequency of asteroid spawning.
+/// * `time`: The `Time` resource to measure the run against.
+/// * `run_timer`: The [`RunTimer`] resource holding how long this run has lasted.
 pub fn spawn_asteroids(
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
     window: Query<&Window, With<PrimaryWindow>>,
     time: Res<Time>,
+    run_timer: Res<RunTimer>,
 ) {
-    // The longer the game is running, the more asteroids will spawn.
+    // The longer the run has lasted, the more asteroids will spawn.
     // This is done by using a logarithmic function to adjust the time between spawns.
     // In this case I found that a logarithmic function with a base of 5.0 works well.
     // The time elapsed is divided by 2.0 to make the game easier at the start,
     // and then the logarithm is applied to it.
     let log_base = 5.0;
-    let time_elapsed = (time.elapsed_secs() / 2.0) + log_base;
-    let time_adjusted = time_elapsed.log(log_base);
+    let time_adjusted = ((run_timer.elapsed(&time) / 2.0) + log_base).log(log_base);
 
     let window = window.single().unwrap();
+
+    // The distance from the center of the screen to each edge.
+    let half_window = Vec2::new(window.width(), window.height()) / 2.0;
 
     // We use a while loop to spawn a random number of asteroids.
     while rand::random_range(0.0..time_adjusted) > 1.0 {
@@ -85,106 +75,61 @@ pub fn spawn_asteroids(
             _ => AsteroidSize::Large,
         };
 
-        let asteroid_diameter = size.diameter();
+        let radius = size.radius();
 
-        // Pick a location for the asteroid.
-        // TODO: Don't match on an integer!
-        let (location, mut dir) = match rand::random_range(0..4) {
-            0 => {
-                // The top of the screen
-                (
-                    Vec3::new(
-                        rand::random_range(-window.width() / 2.0..window.width() / 2.0),
-                        window.height() / 2.0 + asteroid_diameter,
-                        0.0,
-                    ),
-                    // Pick anywhere pointing down
-                    Vec2::new(rand::random_range(-1.0..1.0), rand::random_range(-1.0..0.1))
-                        .normalize(),
-                )
-            }
-            1 => {
-                // The right side of the screen
-                (
-                    Vec3::new(
-                        window.width() / 2.0 + asteroid_diameter,
-                        rand::random_range(-window.height() / 2.0..window.height() / 2.0),
-                        0.0,
-                    ),
-                    // Pick anywhere pointing left
-                    Vec2::new(
-                        rand::random_range(-1.0..-0.1),
-                        rand::random_range(-1.0..1.0),
-                    )
-                    .normalize(),
-                )
-            }
-            2 => {
-                // The bottom of the screen
-                (
-                    Vec3::new(
-                        rand::random_range(-window.width() / 2.0..window.width() / 2.0),
-                        -window.height() / 2.0 - asteroid_diameter,
-                        0.0,
-                    ),
-                    // Pick anywhere pointing up
-                    Vec2::new(rand::random_range(-1.0..1.0), rand::random_range(0.1..1.0))
-                        .normalize(),
-                )
-            }
-            3 => {
-                // The left side of the screen
-                (
-                    Vec3::new(
-                        -window.width() / 2.0 - asteroid_diameter,
-                        rand::random_range(-window.height() / 2.0..window.height() / 2.0),
-                        0.0,
-                    ),
-                    // Pick anywhere pointing right
-                    Vec2::new(rand::random_range(0.1..1.0), rand::random_range(-1.0..1.0))
-                        .normalize(),
-                )
-            }
-            _ => unreachable!(),
+        // Park the asteroid just off one edge of the window, at a random point
+        // along that edge, then aim it back across the screen.
+        let (location, direction) = match rand::random_range(0..4) {
+            // The top of the screen, pointing down.
+            0 => (
+                Vec2::new(
+                    rand::random_range(-half_window.x..half_window.x),
+                    half_window.y + radius,
+                ),
+                Vec2::new(rand::random_range(-1.0..1.0), rand::random_range(-1.0..0.1)),
+            ),
+            // The right side of the screen, pointing left.
+            1 => (
+                Vec2::new(
+                    half_window.x + radius,
+                    rand::random_range(-half_window.y..half_window.y),
+                ),
+                Vec2::new(
+                    rand::random_range(-1.0..-0.1),
+                    rand::random_range(-1.0..1.0),
+                ),
+            ),
+            // The bottom of the screen, pointing up.
+            2 => (
+                Vec2::new(
+                    rand::random_range(-half_window.x..half_window.x),
+                    -half_window.y - radius,
+                ),
+                Vec2::new(rand::random_range(-1.0..1.0), rand::random_range(0.1..1.0)),
+            ),
+            // The left side of the screen, pointing right.
+            _ => (
+                Vec2::new(
+                    -half_window.x - radius,
+                    rand::random_range(-half_window.y..half_window.y),
+                ),
+                Vec2::new(rand::random_range(0.1..1.0), rand::random_range(-1.0..1.0)),
+            ),
         };
 
-        // Adjust the speed of the asteroid based on its size
-        match size {
-            AsteroidSize::Small => {
-                // Small asteroids are faster
-                dir *= 10.0;
-            }
-            AsteroidSize::Medium => {
-                // Medium asteroids are normal speed
-                dir *= 5.0;
-            }
-            AsteroidSize::Large => {
-                // Large asteroids are slower
-                dir *= 2.5;
-            }
-        }
+        // Smaller asteroids travel faster, and everything speeds up over time.
+        let speed = match size {
+            AsteroidSize::Small => 10.0,
+            AsteroidSize::Medium => 5.0,
+            AsteroidSize::Large => 2.5,
+        };
 
-        dir *= time_adjusted;
-
-        // Create the asteroid
-        Asteroid::spawn_new(
-            size,
-            location,
-            dir,
-            &mut commands,
-            &mut meshes,
-            &mut materials,
-        );
-    }
-}
-
-/// Despawns all asteroids in the game.
-///
-/// # Arguments
-/// * `commands`: The `Commands` resource to despawn asteroids.
-/// * `query`: A query that retrieves all entities with the `Asteroid` component.
-pub fn despawn_asteroids(mut commands: Commands, query: Query<Entity, With<Asteroid>>) {
-    for entity in query.iter() {
-        commands.entity(entity).despawn();
+        commands.trigger(SpawnAsteroid {
+            asteroid: Asteroid {
+                size,
+                direction: direction.normalize() * speed * time_adjusted,
+            },
+            location: location.extend(0.0),
+        });
     }
 }

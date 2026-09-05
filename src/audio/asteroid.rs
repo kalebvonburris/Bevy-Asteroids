@@ -1,29 +1,47 @@
-//! Handles the audio for the bullet firing and striking an asteroid.
+//! Handles the audio for an asteroid being destroyed.
 
+use bevy::audio::AudioSource;
 use bevy::prelude::*;
 
-use crate::asteroid::AsteroidSize;
+use crate::{asteroid::AsteroidSize, audio::play_sound, explosion::Explosion};
 
-/// Plays a sound for destroying an asteroid based on its size.
+/// The destruction sound for each [`AsteroidSize`].
+#[derive(Resource)]
+pub struct AsteroidSounds {
+    pub small: Handle<AudioSource>,
+    pub medium: Handle<AudioSource>,
+    pub large: Handle<AudioSource>,
+}
+
+/// Loads the asteroid destruction sounds into [`AsteroidSounds`].
 ///
 /// # Arguments
+/// * `asset_server`: The `AssetServer` resource to load the audio files.
+/// * `commands`: The `Commands` resource to insert the loaded handles.
+pub fn preload_asteroid_sounds(asset_server: Res<AssetServer>, mut commands: Commands) {
+    commands.insert_resource(AsteroidSounds {
+        small: asset_server.load("audio/asteroid_small_destruction.mp3"),
+        medium: asset_server.load("audio/asteroid_medium_destruction.mp3"),
+        large: asset_server.load("audio/asteroid_large_destruction.mp3"),
+    });
+}
+
+/// Plays the destruction sound matching the size of whatever just exploded.
+///
+/// # Arguments
+/// * `explosion`: The `Explosion` event that triggered this observer.
+/// * `sounds`: The `AsteroidSounds` resource holding the clips.
 /// * `commands`: The `Commands` resource to spawn the audio player entity.
-/// * `size`: The size of the asteroid being destroyed.
-/// * `asset_server`: The `AssetServer` resource to load the asteroid destruction sound asset.
-pub fn destroy_asteroid(
-    commands: &mut Commands,
-    size: AsteroidSize,
-    asset_server: &Res<AssetServer>,
+pub fn play_explosion_sound(
+    explosion: On<Explosion>,
+    sounds: Res<AsteroidSounds>,
+    mut commands: Commands,
 ) {
-    let sound = match size {
-        AsteroidSize::Large => "audio/asteroid_large_destruction.mp3",
-        AsteroidSize::Medium => "audio/asteroid_medium_destruction.mp3",
-        AsteroidSize::Small => "audio/asteroid_small_destruction.mp3",
+    let sound = match explosion.size {
+        AsteroidSize::Small => sounds.small.clone(),
+        AsteroidSize::Medium => sounds.medium.clone(),
+        AsteroidSize::Large => sounds.large.clone(),
     };
 
-    // If found 0.75 to be pleasantly loud, but not too loud for these sounds.
-    commands.spawn((
-        AudioPlayer::new(asset_server.load(sound)),
-        PlaybackSettings::REMOVE,
-    ));
+    play_sound(&mut commands, sound);
 }

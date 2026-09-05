@@ -1,15 +1,16 @@
-//! Handles the audio for the bullet firing and striking an asteroid.
+//! Handles the audio for the ship firing a bullet.
 
 use bevy::prelude::*;
 
-/// Plays a sound for firing a bullet.
+/// The sound played when the ship fires a bullet.
+#[derive(Resource)]
+pub struct BulletAudio(pub Handle<AudioSource>);
+
+/// Loads the bullet firing sound into [`BulletAudio`].
 ///
 /// # Arguments
-/// * `commands`: The `Commands` resource to spawn the audio player entity.
-/// * `asset_server`: The `AssetServer` resource to load the bullet sound asset.
-pub fn fire_bullet(commands: &mut Commands, asset_server: &Res<AssetServer>) {
-    commands.spawn((
-        AudioPlayer::new(asset_server.load("audio/laser.mp3")),
-        PlaybackSettings::REMOVE,
-    ));
+/// * `asset_server`: The `AssetServer` resource to load the audio file.
+/// * `commands`: The `Commands` resource to insert the loaded handle.
+pub fn preload_bullet_audio(asset_server: Res<AssetServer>, mut commands: Commands) {
+    commands.insert_resource(BulletAudio(asset_server.load("audio/laser.mp3")));
 }

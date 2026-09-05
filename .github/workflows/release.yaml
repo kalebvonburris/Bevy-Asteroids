@@ -136,12 +136,10 @@ jobs:
         uses: cachix/install-nix-action@v31
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Update Nix
-        run: |
-          nix-channel --add https://nixos.org/channels/nixpkgs-unstable
-          nix-channel --update
+          extra_nix_config: |
+            experimental-features = nix-command flakes
       - name: Build release
-        run: nix-shell --run "cargo build --release --no-default-features"
+        run: nix develop .#linux --command cargo build --release --no-default-features
       - name: Prepare release
         run: |
           strip target/release/${{ env.GAME_EXECUTABLE_NAME }}
@@ -177,12 +175,10 @@ jobs:
       uses: cachix/install-nix-action@v31
       with:
         github_access_token: ${{ secrets.GITHUB_TOKEN }}
-    - name: Update Nix
-      run: |
-        nix-channel --add https://nixos.org/channels/nixpkgs-unstable
-        nix-channel --update
+        extra_nix_config: |
+          experimental-features = nix-command flakes
     - name: Build release with Nix
-      run: nix-shell shell-windows.nix --run "cargo build --target=x86_64-pc-windows-gnu --release --no-default-features"
+      run: nix develop .#windows --command cargo build --target=x86_64-pc-windows-gnu --release --no-default-features
     - name: Zip release
       uses: vimtor/action-zip@v1
       with:
@@ -212,19 +208,27 @@ jobs:
       uses: cachix/install-nix-action@v31
       with:
         github_access_token: ${{ secrets.GITHUB_TOKEN }}
-    - name: Update Nix
-      run: |
-        nix-channel --add https://nixos.org/channels/nixpkgs-unstable
-        nix-channel --update
+        extra_nix_config: |
+          experimental-features = nix-command flakes
     - name: Build Release
-      # Turn wasm-opt off as cargo already does that if possible
-      run: nix-shell shell-wasm.nix --pure --run "RUSTFLAGS='--cfg getrandom_backend=\"wasm_js\"' bevy build --release --no-default-features true web --wasm-opt false --bundle"
+      run: nix develop .#wasm --command cargo build --profile web-release --no-default-features --target wasm32-unknown-unknown
+    - name: Bundle Release
+      # Produces the layout index.html expects: build/asteroids.js + build/asteroids_bg.wasm.
+      # No wasm-opt pass; the web-release profile already optimizes for size.
+      run: |
+        nix develop .#wasm --command wasm-bindgen \
+          --no-typescript --target web \
+          --out-dir dist/build --out-name ${{ env.GAME_EXECUTABLE_NAME }} \
+          target/wasm32-unknown-unknown/web-release/${{ env.GAME_EXECUTABLE_NAME }}.wasm
+        cp web/index.html dist/index.html
+        cp -r assets dist/assets
+        touch dist/.nojekyll
     - name: Deploy
       if: ${{ !github.event.act }} # skip during local actions testing
       uses: peaceiris/actions-gh-pages@v4
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: target/bevy_web/web-release/asteroids
+        publish_dir: dist
         publish_branch: web
         destination_dir: .
         commit_message: 'chore(bot): Deploy web release for version ${{ env.VERSION }}'

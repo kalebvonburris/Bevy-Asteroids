@@ -2,3 +2,5 @@
 /.xwin-cache
 /dist
 /.nix-cargo
+.direnv/
+.envrc

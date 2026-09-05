@@ -2,18 +2,34 @@
 
 use bevy::prelude::*;
 
+/// Marker component for the in-game score readout.
 #[derive(Component)]
 pub struct ScoreText;
 
+/// Resource to hold the player's score.
+#[derive(Resource)]
+pub struct PlayerScore(pub i32);
+
+/// Event to update the score in the UI.
+#[derive(Event)]
+pub struct ScoreEvent(pub i32);
+
+/// Spawns the score readout across the top of the screen.
+///
+/// # Arguments
+/// * `commands`: The commands to spawn UI elements.
 pub fn setup_game_ui(mut commands: Commands) {
     commands.spawn((
         ScoreText,
         Text::new("Score: 0"),
         TextFont {
-            font_size: 30.0,
+            font_size: FontSize::Vh(4.0),
             ..default()
         },
-        TextLayout::new_with_justify(JustifyText::Center),
+        TextLayout {
+            justify: Justify::Center,
+            ..default()
+        },
         Node {
             justify_content: JustifyContent::Center,
             width: Val::Percent(100.0),
@@ -24,40 +40,28 @@ pub fn setup_game_ui(mut commands: Commands) {
     ));
 }
 
-pub fn despawn_game_ui(mut commands: Commands, query: Query<Entity, With<ScoreText>>) {
-    for entity in query.iter() {
-        commands.entity(entity).despawn();
-    }
-}
-
+/// Resets the score back to zero at the start of a new run.
+///
+/// # Arguments
+/// * `player_score`: The `PlayerScore` resource to reset.
 pub fn restart_score(mut player_score: ResMut<PlayerScore>) {
     player_score.0 = 0;
 }
 
-/// Resource to hold the player's score.
-#[derive(Resource)]
-pub struct PlayerScore(pub i32);
-
-/// Event to update the score in the UI.
-#[derive(Event)]
-pub struct ScoreEvent(pub i32);
-
-/// Updates the score text in the UI based on the player's score.
+/// Adds to the player's score and updates the score text to match.
 ///
 /// # Arguments
+/// * `update`: The `ScoreEvent` event that triggered this observer.
 /// * `query`: A query that retrieves the `ScoreText` component.
-/// * `events`: An event reader to read `ScoreEvent` events.
 /// * `player_score`: A mutable reference to the `PlayerScore` resource.
-pub fn update_score(
+pub fn on_score(
+    update: On<ScoreEvent>,
     mut query: Query<&mut Text, With<ScoreText>>,
-    mut events: EventReader<ScoreEvent>,
     mut player_score: ResMut<PlayerScore>,
 ) {
-    for event in events.read() {
-        player_score.0 += event.0;
-    }
+    player_score.0 += update.0;
 
     for mut text in query.iter_mut() {
-        (*text).0 = format!("Score: {}", player_score.0);
+        text.0 = format!("Score: {}", player_score.0);
     }
 }

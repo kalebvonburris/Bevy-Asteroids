@@ -12,126 +12,107 @@ pub mod explosion;
 pub mod ship;
 pub mod ui;
 
-use asteroid::{check_asteroid_bounds, move_asteroids, spawn_asteroids};
-use audio::main_song::play_main_song;
 use bevy::{
-    app::PanicHandlerPlugin, diagnostic::DiagnosticsPlugin, prelude::*,
-    render::mesh::VertexAttributeValues,
+    app::PanicHandlerPlugin, diagnostic::DiagnosticsPlugin, ecs::schedule::SystemCondition,
+    prelude::*, render::mesh::VertexAttributeValues,
 };
-use bullet::BulletPlugin;
-use explosion::{setup_explosions, systems::explosion_system};
-use ship::*;
 
-use crate::{asteroid::despawn_asteroids, bullet::despawn_bullets, ui::GameUiPlugin};
+use crate::{
+    asteroid::AsteroidPlugin, audio::GameAudioPlugin, bullet::BulletPlugin,
+    explosion::ExplosionPlugin, ship::ShipPlugin, ui::GameUiPlugin,
+};
 
 /// The main plugin for the game, which sets up the game state and systems.
 pub struct AsteroidsPlugin;
 
 impl Plugin for AsteroidsPlugin {
     fn build(&self, app: &mut App) {
-        // Setup default plugins
-        let mut default_plugins = DefaultPlugins.set(WindowPlugin {
-            primary_window: Some(Window {
-                title: "Asteroids".to_string(),
-                fit_canvas_to_parent: true,
+        let default_plugins = DefaultPlugins
+            .set(WindowPlugin {
+                primary_window: Some(Window {
+                    title: "Asteroids".to_string(),
+                    fit_canvas_to_parent: true,
+                    ..default()
+                }),
                 ..default()
-            }),
-            ..default()
-        });
-
-        // Disable unnecessary plugins
-        default_plugins = default_plugins
+            })
+            // Neither of these earn their keep in a game this small.
             .disable::<PanicHandlerPlugin>()
             .disable::<DiagnosticsPlugin>();
 
-        app.add_plugins(default_plugins);
-
-        // Add GameState
-        app.init_state::<GameState>();
-
-        // Make the background black.
-        app.insert_resource(ClearColor(Color::BLACK));
-
-        // Set the fixed time step - this is how often we
-        // check to see if we spawn asteroids
-        app.insert_resource(Time::<Fixed>::from_seconds(0.5));
-
-        // Setup the bullet and explosion resources.
-        app.add_systems(PostStartup, setup_explosions);
-
-        // Startup -> Loading -> Main Menu
-        app.add_plugins(GameUiPlugin);
-
-        // Main Menu -> Game
-        app.add_systems(OnEnter(GameState::Game), setup_player);
-
-        // Game -> Game Over
-
-        // Keep asteroids and bullets around for the game over screen.
-        app.add_systems(
-            OnExit(GameState::GameOver),
-            (despawn_asteroids, despawn_bullets),
-        );
-
-        // Add the camera and main song systems. This has to be done after the
-        // Startup stage, otherwise the loading of assets will break WASM builds.
-        app.add_systems(PostStartup, (spawn_camera, play_main_song));
-
-        // Game systems that run until the game is over.
-        app.add_systems(
-            Update,
-            (
-                // Player ship
-                check_ship_bounds,
-                player_input_and_movement,
-                check_ship_collisions,
-                color_player,
-            )
-                .run_if(in_state(GameState::Game)),
-        );
-
-        app.add_plugins(BulletPlugin);
-
-        // Game systems that run regardless of the game state. Allows for an interactive game over screen.
-        app.add_systems(
-            Update,
-            (
-                // Asteroids
-                move_asteroids,
-                check_asteroid_bounds,
-                // Explosions
-                explosion_system,
-            )
-                .run_if(in_state(GameState::Game).or(in_state(GameState::GameOver))),
-        );
-
-        // Fixed systems
-        app.add_systems(
-            FixedUpdate,
-            (
-                spawn_asteroids
-                    .before(move_asteroids)
-                    .before(check_asteroid_bounds)
-                    // Only spawn asteroids if we aren't in the main menu.
-                    .run_if(in_state(GameState::Game).or(in_state(GameState::GameOver))),
-                // Only run the heal player system if the game is in progress.
-                (heal_player).run_if(in_state(GameState::Game)),
-            ),
-        );
+        app.add_plugins(default_plugins)
+            .init_state::<GameState>()
+            // Space is black.
+            .insert_resource(ClearColor(Color::BLACK))
+            // Drives the fixed timestep, which is how often we try to spawn
+            // asteroids and heal the player.
+            .insert_resource(Time::<Fixed>::from_seconds(0.5))
+            .add_plugins((
+                AsteroidPlugin,
+                BulletPlugin,
+                ExplosionPlugin,
+                GameAudioPlugin,
+                GameUiPlugin,
+                ShipPlugin,
+            ))
+            // Spawned in `PostStartup` alongside the asset-loading systems, which
+            // have to run after `Startup` or the loads break WASM builds.
+            .add_systems(PostStartup, spawn_camera);
     }
 }
 
 /// The state of the user interface.
 #[derive(States, Default, Debug, Clone, PartialEq, Eq, Hash)]
 pub enum GameState {
+    /// The title screen, shown before the first game and between runs.
     #[default]
     MainMenu,
+    /// A game in progress.
     Game,
+    /// The player ship has been destroyed. Asteroids keep drifting behind the
+    /// score readout until the player restarts.
     GameOver,
+}
+
+/// Run condition for if the game is in the `GameState::Game` or
+/// `GameState::GameOver` states - used by many systems.
+pub fn in_play_or_game_over() -> impl SystemCondition<()> {
+    in_state(GameState::Game).or_else(in_state(GameState::GameOver))
 }
 
 fn spawn_camera(mut commands: Commands) {
     commands.spawn((Name::new("Camera"), Camera2d));
+}
+
+/// Despawns every entity holding the component `C`.
+///
+/// Used to tear down a screen or clear the playfield on a state transition, e.g.
+/// `despawn_all::<Asteroid>`.
+///
+/// # Arguments
+/// * `commands`: The `Commands` resource to despawn the entities.
+/// * `query`: A query that retrieves all entities with the `C` component.
+pub fn despawn_all<C: Component>(mut commands: Commands, query: Query<Entity, With<C>>) {
+    for entity in query.iter() {
+        commands.entity(entity).despawn();
+    }
+}
+
+/// Checks whether a point has left the window entirely.
+///
+/// # Arguments
+/// * `translation`: The position to test.
+/// * `margin`: The entity's radius, so it only counts as out of bounds once it
+///   is fully off-screen.
+/// * `half_window`: The distance from the center of the window to each edge.
+///
+/// # Returns
+/// `true` if the point is past any edge of the window.
+pub fn out_of_bounds(translation: Vec3, margin: f32, half_window: Vec2) -> bool {
+    translation.x + margin < -half_window.x
+        || translation.x - margin > half_window.x
+        || translation.y + margin < -half_window.y
+        || translation.y - margin > half_window.y
 }
 
 /// Checks if two lines intersect.
@@ -180,7 +161,7 @@ pub fn mesh_and_transform_to_points(mesh: &Mesh, transform: &Transform) -> Vec<V
             .iter()
             .map(|position| {
                 let curr_position = Vec3::from((position[0], position[1], position[2]));
-                let translated_position = transform.compute_matrix() * curr_position.extend(1.0);
+                let translated_position = transform.to_matrix() * curr_position.extend(1.0);
 
                 Vec2::new(translated_position.x, translated_position.y)
             })

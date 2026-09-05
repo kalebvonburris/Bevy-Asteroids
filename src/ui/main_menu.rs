@@ -1,4 +1,6 @@
-use bevy::{prelude::*, text::LineHeight};
+//! The title screen, shown before the first game.
+
+use bevy::prelude::*;
 
 use crate::GameState;
 
@@ -24,10 +26,12 @@ pub fn setup_main_menu(mut commands: Commands) {
             },
         ))
         .with_child((
-            TextLayout::new_with_justify(JustifyText::Center),
+            TextLayout {
+                justify: Justify::Center,
+                ..default()
+            },
             TextFont {
-                font_size: 40.0,
-                line_height: LineHeight::RelativeToFont(2.0),
+                font_size: FontSize::Px(40.0),
                 ..default()
             },
             Text::new("Welcome to Asteroids!\nPress 'Space' to Start"),
@@ -35,6 +39,10 @@ pub fn setup_main_menu(mut commands: Commands) {
 }
 
 /// Handles input for the main menu.
+///
+/// # Arguments
+/// * `keyboard_input`: The `ButtonInput<KeyCode>` resource to check for player input.
+/// * `next_state`: The `NextState<GameState>` resource to start the game.
 pub fn handle_main_menu_input(
     keyboard_input: Res<ButtonInput<KeyCode>>,
     mut next_state: ResMut<NextState<GameState>>,
@@ -42,16 +50,5 @@ pub fn handle_main_menu_input(
     if keyboard_input.just_pressed(KeyCode::Space) {
         // Transition to the game state when space is pressed
         next_state.set(GameState::Game);
-    }
-}
-
-/// Deletes the main menu UI from the game.
-///
-/// # Arguments
-/// * `commands`: The commands to despawn the main menu UI.
-/// * `query`: A query that retrieves all entities with the `MainMenu` component.
-pub fn despawn_main_menu(mut commands: Commands, query: Query<Entity, With<MainMenu>>) {
-    for entity in query.iter() {
-        commands.entity(entity).despawn();
     }
 }
