@@ -54,6 +54,7 @@ bevy = { version = "0.19.1", default-features = false, features = [
   "webgl2",
   "default_font",
 ] }
+wasm-bindgen = "=0.2.127"
 
 # Compile with Performance Optimizations:
 # <https://bevyengine.org/learn/quick-start/getting-started/setup/#compile-with-performance-optimizations>
