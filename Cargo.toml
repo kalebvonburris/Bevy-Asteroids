@@ -93,7 +93,6 @@ inherits = "release"
 # Optimize with size in mind (also try "z", sometimes it is better).
 # Slightly slows compile times, great improvements to file size and runtime performance.
 opt-level = 'z'
-debug = true
 
 [profile.web-release.package."*"]
 opt-level = 3
@@ -101,3 +100,6 @@ strip = true
 debug = false
 debug-assertions = false
 overflow-checks = false
+
+[package.metadata.wasm-pack.profile.web-release]
+wasm-opt = ["-Oz", "--strip-debug", "--strip-dwarf", "--strip"]
