@@ -1,7 +1,7 @@
 //! Asteroid data and parameters for the game.
 
 use bevy::{asset::RenderAssetUsages, prelude::*, render::mesh::PrimitiveTopology};
-use rand::RngExt;
+use rand::{RngExt, random_range};
 
 /// Parameters that define the `min_radius, max_radius, number_of_points` for small asteroids.
 pub const SMALL_PARAMETERS: AsteroidParameters = AsteroidParameters {
@@ -87,39 +87,42 @@ impl AsteroidSize {
     }
 }
 
-/// Represents an `Asteroid` in the game.
-#[derive(Component, Clone, Debug)]
-pub struct Asteroid {
-    /// The `size` of the asteroid. See [`AsteroidSize`].
-    pub size: AsteroidSize,
-    /// The `direction` of the asteroid's movement.
-    /// This is a vector that indicates the direction and speed of the asteroid.
-    pub direction: Vec2,
+/// Prerendered data about asteroids - saves on huge memory
+/// usage from spawning a new mesh/color for every instantiated asteroid.
+#[derive(Resource)]
+pub struct AsteroidResource {
+    pub small_meshes: Vec<Handle<Mesh>>,
+    pub medium_meshes: Vec<Handle<Mesh>>,
+    pub large_meshes: Vec<Handle<Mesh>>,
+    pub color: Handle<ColorMaterial>,
 }
 
-/// An event that spawns a new asteroid, handled by [`spawn_asteroid`].
-#[derive(Event)]
-pub struct SpawnAsteroid {
-    /// The asteroid to build a mesh for and spawn.
-    pub asteroid: Asteroid,
-    /// Where in the world to place it.
-    pub location: Vec3,
-}
-
-/// Builds a randomly shaped mesh for a [`SpawnAsteroid`] event and spawns it.
-///
-/// # Arguments
-/// * `data`: The `SpawnAsteroid` event that triggered this observer.
-/// * `commands`: The `Commands` resource to spawn the asteroid entity.
-/// * `meshes`: The `Assets<Mesh>` resource to create the asteroid mesh.
-/// * `materials`: The `Assets<ColorMaterial>` resource to create the asteroid material.
-pub fn spawn_asteroid(
-    data: On<SpawnAsteroid>,
+pub fn preload_asteroids(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    let asteroid_parameters = match data.asteroid.size {
+    let small_meshes = (0..10)
+        .map(|_| meshes.add(generate_random_asteroid_mesh(AsteroidSize::Small)))
+        .collect();
+    let medium_meshes = (0..10)
+        .map(|_| meshes.add(generate_random_asteroid_mesh(AsteroidSize::Medium)))
+        .collect();
+    let large_meshes = (0..10)
+        .map(|_| meshes.add(generate_random_asteroid_mesh(AsteroidSize::Large)))
+        .collect();
+
+    let color = materials.add(ColorMaterial::from_color(Color::WHITE));
+    commands.insert_resource(AsteroidResource {
+        small_meshes,
+        medium_meshes,
+        large_meshes,
+        color,
+    });
+}
+
+fn generate_random_asteroid_mesh(size: AsteroidSize) -> Mesh {
+    let asteroid_parameters = match size {
         AsteroidSize::Small => SMALL_PARAMETERS,
         AsteroidSize::Medium => MEDIUM_PARAMETERS,
         AsteroidSize::Large => LARGE_PARAMETERS,
@@ -151,20 +154,65 @@ pub fn spawn_asteroid(
     // needs to connect to the first point to draw a closed shape.
     asteroid_points.push(asteroid_points[0]);
 
-    let mesh = Mesh::new(PrimitiveTopology::LineStrip, RenderAssetUsages::all())
-        .with_inserted_attribute(
-            Mesh::ATTRIBUTE_POSITION,
-            asteroid_points
-                .iter()
-                .map(|(c, radius)| Vec3::new(c.cos() * radius, c.sin() * radius, 5.0))
-                .collect::<Vec<_>>(),
-        );
+    Mesh::new(PrimitiveTopology::LineStrip, RenderAssetUsages::all()).with_inserted_attribute(
+        Mesh::ATTRIBUTE_POSITION,
+        asteroid_points
+            .iter()
+            .map(|(c, radius)| Vec3::new(c.cos() * radius, c.sin() * radius, 5.0))
+            .collect::<Vec<_>>(),
+    )
+}
 
-    // Spawn a list of lines with start and end points for each lines
+/// Represents an `Asteroid` in the game.
+#[derive(Component, Clone, Debug)]
+pub struct Asteroid {
+    /// The `size` of the asteroid. See [`AsteroidSize`].
+    pub size: AsteroidSize,
+    /// The `direction` of the asteroid's movement.
+    /// This is a vector that indicates the direction and speed of the asteroid.
+    pub direction: Vec2,
+}
+
+/// An event that spawns a new asteroid, handled by [`spawn_asteroid`].
+#[derive(Event)]
+pub struct SpawnAsteroid {
+    /// The asteroid to build a mesh for and spawn.
+    pub asteroid: Asteroid,
+    /// Where in the world to place it.
+    pub location: Vec3,
+}
+
+/// Builds a randomly shaped mesh for a [`SpawnAsteroid`] event and spawns it.
+///
+/// # Arguments
+/// * `data`: The `SpawnAsteroid` event that triggered this observer.
+/// * `commands`: The `Commands` resource to spawn the asteroid entity.
+/// * `meshes`: The `Assets<Mesh>` resource to create the asteroid mesh.
+/// * `materials`: The `Assets<ColorMaterial>` resource to create the asteroid material.
+pub fn spawn_asteroid(
+    data: On<SpawnAsteroid>,
+    asteroid_resource: Res<AsteroidResource>,
+    mut commands: Commands,
+) {
+    let mesh = match data.asteroid.size {
+        AsteroidSize::Small => {
+            let index = random_range(..asteroid_resource.small_meshes.len());
+            asteroid_resource.small_meshes[index].clone()
+        }
+        AsteroidSize::Medium => {
+            let index = random_range(..asteroid_resource.medium_meshes.len());
+            asteroid_resource.medium_meshes[index].clone()
+        }
+        AsteroidSize::Large => {
+            let index = random_range(..asteroid_resource.large_meshes.len());
+            asteroid_resource.large_meshes[index].clone()
+        }
+    };
+
     commands.spawn((
         data.asteroid.clone(),
-        Mesh2d(meshes.add(mesh)),
-        MeshMaterial2d(materials.add(ColorMaterial::from_color(Color::WHITE))),
+        Mesh2d(mesh),
+        MeshMaterial2d(asteroid_resource.color.clone()),
         Transform::from_translation(data.location),
     ));
 }

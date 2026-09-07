@@ -17,6 +17,7 @@ pub struct AsteroidPlugin;
 
 impl Plugin for AsteroidPlugin {
     fn build(&self, app: &mut App) {
+        app.add_systems(PostStartup, preload_asteroids);
         app.init_resource::<RunTimer>();
         // Each run starts from the same difficulty, however long the app has
         // been open or how long the player sat on a menu.
