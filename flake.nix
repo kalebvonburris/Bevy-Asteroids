@@ -22,33 +22,14 @@
 
         inherit (pkgs) lib;
 
-        # e.g. "x86_64-unknown-linux-gnu"; derived so this also works on aarch64.
-        hostTarget = pkgs.stdenv.hostPlatform.rust.rustcTarget;
+        # Toolchains are pinned in files at the repo root. Change the channel
+        # there, not here.
+        stableToolchain = pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
+        wasmToolchain = pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain-wasm.toml;
 
-        # Every shell ships rust-analyzer alongside rust-src, so an editor LSP
-        # client (nvim) gets an analyzer built against the same toolchain as the
-        # shell, and can jump into core/alloc/std sources.
-        rustExtensions = [ "rust-src" "rust-analyzer" ];
-
-        mkStableToolchain = targets:
-          pkgs.rust-bin.stable.latest.default.override {
-            inherit targets;
-            extensions = rustExtensions;
-          };
-
-        # `nightly.latest` is whatever nightly was published today, and
-        # rust-analyzer is occasionally missing from one of those. This walks
-        # back to the newest nightly that actually has every component asked for.
-        mkNightlyToolchain = targets:
-          pkgs.rust-bin.selectLatestNightlyWith (toolchain:
-            toolchain.default.override {
-              inherit targets;
-              extensions = rustExtensions;
-            });
-
-        linuxToolchain = mkStableToolchain [ hostTarget ];
-        windowsToolchain = mkStableToolchain [ hostTarget "x86_64-pc-windows-gnu" ];
-        wasmToolchain = mkNightlyToolchain [ "wasm32-unknown-unknown" hostTarget ];
+        # Linux and Windows share one toolchain; the mingw std rides along.
+        linuxToolchain = stableToolchain;
+        windowsToolchain = stableToolchain;
 
         # Where the rust-src component lands; rust-analyzer reads this.
         rustSrcPath = toolchain: "${toolchain}/lib/rustlib/src/rust/library";

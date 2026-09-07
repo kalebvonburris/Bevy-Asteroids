@@ -1,6 +1,4 @@
 # Templated from https://github.com/TheBevyFlock/bevy_new_2d
-cargo-features = ["panic-immediate-abort"]
-
 [package]
 name = "asteroids"
 version = "0.1.0"
@@ -24,7 +22,6 @@ default = ["bevy/dynamic_linking"]
 bevy = { version = "0.19.1", default-features = false, features = [
   "std",
   "bevy_color",
-  "bevy_scene",
   "bevy_sprite",
   "bevy_window",
   "bevy_audio",
@@ -44,7 +41,6 @@ bevy = { version = "0.19.1", default-features = false, features = [
   "web",
   "bevy_winit",
   "bevy_color",
-  "bevy_scene",
   "bevy_sprite",
   "bevy_window",
   "bevy_audio",
@@ -95,7 +91,6 @@ inherits = "release"
 # Slightly slows compile times, great improvements to file size and runtime performance.
 opt-level = 'z'
 strip = false
-panic = "immediate-abort"
 
 [profile.web-release.package."*"]
 opt-level = 3

@@ -42,7 +42,7 @@ pub fn check_bullet_bounds(
     let half_window = Vec2::new(window.width(), window.height()) / 2.0;
 
     for (entity, transform) in query.iter() {
-        if out_of_bounds(transform.translation, BULLET_RADIUS, half_window) {
+        if out_of_bounds(&transform.translation, BULLET_RADIUS, half_window) {
             commands.entity(entity).despawn();
         }
     }
@@ -79,7 +79,8 @@ pub fn check_bullet_collisions(
             let bullet_points = mesh_and_transform_to_points(bullet_mesh, bullet_transform);
 
             for edge in asteroid_points.windows(2) {
-                let Some(p) = lines_intersect(edge[0], edge[1], bullet_points[0], bullet_points[1])
+                let Some(p) =
+                    lines_intersect(&edge[0], &edge[1], &bullet_points[0], &bullet_points[1])
                 else {
                     continue;
                 };

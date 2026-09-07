@@ -108,7 +108,7 @@ pub fn despawn_all<C: Component>(mut commands: Commands, query: Query<Entity, Wi
 ///
 /// # Returns
 /// `true` if the point is past any edge of the window.
-pub fn out_of_bounds(translation: Vec3, margin: f32, half_window: Vec2) -> bool {
+pub fn out_of_bounds(translation: &Vec3, margin: f32, half_window: Vec2) -> bool {
     translation.x + margin < -half_window.x
         || translation.x - margin > half_window.x
         || translation.y + margin < -half_window.y
@@ -125,7 +125,7 @@ pub fn out_of_bounds(translation: Vec3, margin: f32, half_window: Vec2) -> bool 
 ///
 /// # Returns
 /// An `Option<Vec2>` that contains the intersection point if the lines intersect, or `None` if they do not.
-pub fn lines_intersect(p1: Vec2, p2: Vec2, p3: Vec2, p4: Vec2) -> Option<Vec2> {
+pub fn lines_intersect(p1: &Vec2, p2: &Vec2, p3: &Vec2, p4: &Vec2) -> Option<Vec2> {
     let s1 = p2 - p1;
     let s2 = p4 - p3;
 
@@ -154,6 +154,7 @@ pub fn lines_intersect(p1: Vec2, p2: Vec2, p3: Vec2, p4: Vec2) -> Option<Vec2> {
 /// A `Vec<Vec2>` containing the transformed, absolute points of the mesh.
 pub fn mesh_and_transform_to_points(mesh: &Mesh, transform: &Transform) -> Vec<Vec2> {
     let position_data = mesh.attribute(Mesh::ATTRIBUTE_POSITION).unwrap();
+    let matrix = transform.to_matrix();
 
     if let VertexAttributeValues::Float32x3(positions) = position_data {
         // Calculate the new position of the points from the transform
@@ -161,7 +162,7 @@ pub fn mesh_and_transform_to_points(mesh: &Mesh, transform: &Transform) -> Vec<V
             .iter()
             .map(|position| {
                 let curr_position = Vec3::from((position[0], position[1], position[2]));
-                let translated_position = transform.to_matrix() * curr_position.extend(1.0);
+                let translated_position = matrix * curr_position.extend(1.0);
 
                 Vec2::new(translated_position.x, translated_position.y)
             })

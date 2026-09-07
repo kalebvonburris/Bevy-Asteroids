@@ -223,7 +223,7 @@ jobs:
             -Oz --strip-debug --strip-dwarf --strip-producers \
             -o dist/build/opt.wasm \
             dist/build/${{ env.GAME_EXECUTABLE_NAME }}_bg.wasm
-          mv dist/build/opt.wasm dist/build/
+          mv dist/build/opt.wasm dist/build/${{ env.GAME_EXECUTABLE_NAME }}_bg.wasm
           cp web/index.html dist/build/${{ env.GAME_EXECUTABLE_NAME }}_bg.wasm
           cp -r assets dist/assets
           touch dist/.nojekyll
