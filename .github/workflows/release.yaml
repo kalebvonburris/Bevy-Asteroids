@@ -3,12 +3,12 @@ on:
   push:
     # Sequence of patterns matched against refs/tags
     tags:
-      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
-      - 'V*'
+      - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
+      - "V*"
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version - in the form of v1.2.3'
+        description: "Version - in the form of v1.2.3"
         required: true
         type: string
 
@@ -17,7 +17,6 @@ env:
   #   if you use special characters, take a look at the 'Make paths relative' step in the 'build-web' job
   GAME_EXECUTABLE_NAME: asteroids
   GAME_OSX_APP_NAME: Asteroids
-
 
 permissions: write-all
 
@@ -149,7 +148,7 @@ jobs:
         run: |
           tar -czf ${{ env.GAME_EXECUTABLE_NAME }}_linux.tar.gz ${{ env.GAME_EXECUTABLE_NAME }} assets
       - name: Upload release
-        if : ${{ !github.event.act }} # skip during local actions testing
+        if: ${{ !github.event.act }} # skip during local actions testing
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
@@ -165,34 +164,34 @@ jobs:
     env:
       VERSION: ${{needs.get-version.outputs.version}}
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-    - name: Setup Rust Cache
-      uses: Swatinem/rust-cache@v2
-    - name: Update Ubuntu
-      run: sudo apt-get update
-    - name: Install Nix
-      uses: cachix/install-nix-action@v31
-      with:
-        github_access_token: ${{ secrets.GITHUB_TOKEN }}
-        extra_nix_config: |
-          experimental-features = nix-command flakes
-    - name: Build release with Nix
-      run: nix develop .#windows --command cargo build --target=x86_64-pc-windows-gnu --release --no-default-features
-    - name: Zip release
-      uses: vimtor/action-zip@v1
-      with:
-        files: assets/ credits/ target/x86_64-pc-windows-gnu/release/${{ env.GAME_EXECUTABLE_NAME }}.exe
-        dest: ${{ env.GAME_EXECUTABLE_NAME }}_windows.zip
-    - name: Upload release
-      if: ${{ !github.event.act }} # skip during local actions testing
-      uses: svenstaro/upload-release-action@v2
-      with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: ${{ env.GAME_EXECUTABLE_NAME }}_windows.zip
-        asset_name: ${{ env.GAME_EXECUTABLE_NAME }}_${{ env.VERSION }}_windows.zip
-        tag: ${{ env.VERSION }}
-        overwrite: true
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Setup Rust Cache
+        uses: Swatinem/rust-cache@v2
+      - name: Update Ubuntu
+        run: sudo apt-get update
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - name: Build release with Nix
+        run: nix develop .#windows --command cargo build --target=x86_64-pc-windows-gnu --release --no-default-features
+      - name: Zip release
+        uses: vimtor/action-zip@v1
+        with:
+          files: assets/ credits/ target/x86_64-pc-windows-gnu/release/${{ env.GAME_EXECUTABLE_NAME }}.exe
+          dest: ${{ env.GAME_EXECUTABLE_NAME }}_windows.zip
+      - name: Upload release
+        if: ${{ !github.event.act }} # skip during local actions testing
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{ env.GAME_EXECUTABLE_NAME }}_windows.zip
+          asset_name: ${{ env.GAME_EXECUTABLE_NAME }}_${{ env.VERSION }}_windows.zip
+          tag: ${{ env.VERSION }}
+          overwrite: true
 
   build-web:
     runs-on: ubuntu-latest
@@ -200,38 +199,43 @@ jobs:
     env:
       VERSION: ${{needs.get-version.outputs.version}}
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-    - name: Install Dependencies
-      run: sudo apt-get update
-    - name: Install Nix
-      uses: cachix/install-nix-action@v31
-      with:
-        github_access_token: ${{ secrets.GITHUB_TOKEN }}
-        extra_nix_config: |
-          experimental-features = nix-command flakes
-    - name: Build Release
-      run: nix develop .#wasm --command cargo build --profile web-release --no-default-features --target wasm32-unknown-unknown
-    - name: Bundle Release
-      # Produces the layout index.html expects: build/asteroids.js + build/asteroids_bg.wasm.
-      # No wasm-opt pass; the web-release profile already optimizes for size.
-      run: |
-        nix develop .#wasm --command wasm-bindgen \
-          --no-typescript --target web \
-          --out-dir dist/build --out-name ${{ env.GAME_EXECUTABLE_NAME }} \
-          target/wasm32-unknown-unknown/web-release/${{ env.GAME_EXECUTABLE_NAME }}.wasm
-        cp web/index.html dist/index.html
-        cp -r assets dist/assets
-        touch dist/.nojekyll
-    - name: Deploy
-      if: ${{ !github.event.act }} # skip during local actions testing
-      uses: peaceiris/actions-gh-pages@v4
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: dist
-        publish_branch: web
-        destination_dir: .
-        commit_message: 'chore(bot): Deploy web release for version ${{ env.VERSION }}'
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Install Dependencies
+        run: sudo apt-get update
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - name: Build Release
+        run: nix develop .#wasm --command cargo build --profile web-release --no-default-features --target wasm32-unknown-unknown
+      - name: Bundle Release
+        # Produces the layout index.html expects: build/asteroids.js + build/asteroids_bg.wasm.
+        # No wasm-opt pass; the web-release profile already optimizes for size.
+        run: |
+          nix develop .#wasm --command wasm-bindgen \
+            --no-typescript --target web \
+            --out-dir dist/build --out-name ${{ env.GAME_EXECUTABLE_NAME }} \
+            target/wasm32-unknown-unknown/web-release/${{ env.GAME_EXECUTABLE_NAME }}.wasm
+          nix develop .#wasm --command wasm-opt \
+            -Oz --strip-debug --strip-dwarf --strip-producers \
+            -o dist/build/opt.wasm \
+            dist/build/${{ env.GAME_EXECUTABLE_NAME }}_bg.wasm
+          mv dist/build/opt.wasm dist/build/
+          cp web/index.html dist/build/${{ env.GAME_EXECUTABLE_NAME }}_bg.wasm
+          cp -r assets dist/assets
+          touch dist/.nojekyll
+      - name: Deploy
+        if: ${{ !github.event.act }} # skip during local actions testing
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: dist
+          publish_branch: web
+          destination_dir: .
+          commit_message: "chore(bot): Deploy web release for version ${{ env.VERSION }}"
 
 # Interesting ideas for the future...
 #  build-for-iOS:

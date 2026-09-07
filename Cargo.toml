@@ -1,4 +1,6 @@
 # Templated from https://github.com/TheBevyFlock/bevy_new_2d
+cargo-features = ["panic-immediate-abort"]
+
 [package]
 name = "asteroids"
 version = "0.1.0"
@@ -50,7 +52,6 @@ bevy = { version = "0.19.1", default-features = false, features = [
   "bevy_ui",
   "bevy_state",
   "mp3",
-  "multi_threaded",
   "webgl2",
   "default_font",
 ] }
@@ -93,6 +94,8 @@ inherits = "release"
 # Optimize with size in mind (also try "z", sometimes it is better).
 # Slightly slows compile times, great improvements to file size and runtime performance.
 opt-level = 'z'
+strip = false
+panic = "immediate-abort"
 
 [profile.web-release.package."*"]
 opt-level = 3
@@ -100,6 +103,3 @@ strip = true
 debug = false
 debug-assertions = false
 overflow-checks = false
-
-[package.metadata.wasm-pack.profile.web-release]
-wasm-opt = ["-Oz", "--strip-debug", "--strip-dwarf", "--strip"]

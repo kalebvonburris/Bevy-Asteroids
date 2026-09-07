@@ -4,4 +4,4 @@ runner = "wasm-server-runner"
 
 [unstable]
 build-std = ["core", "alloc", "std", "panic_abort"]
-build-std-features = []
+build-std-features = ["optimize_for_size"]
