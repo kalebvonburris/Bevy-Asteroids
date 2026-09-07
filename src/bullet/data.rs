@@ -28,7 +28,7 @@ impl Bullet {
         commands: &mut Commands,
         mut transform: Transform,
         ship_speed: f32,
-        bullet_config: &BulletConfig,
+        bullet_config: &Res<BulletConfig>,
     ) {
         // Move the bullet forward out of the ship's nose so it does not start
         // inside the ship's own mesh.

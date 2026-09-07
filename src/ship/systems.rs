@@ -124,7 +124,7 @@ pub fn check_ship_collisions(
 
             for s in ship_points.windows(2) {
                 for a in asteroid_points.windows(2) {
-                    let Some(p) = lines_intersect(s[0], s[1], a[0], a[1]) else {
+                    let Some(p) = lines_intersect(&s[0], &s[1], &a[0], &a[1]) else {
                         continue;
                     };
 

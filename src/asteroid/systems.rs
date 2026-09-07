@@ -32,7 +32,7 @@ pub fn check_asteroid_bounds(
 
     for (entity, asteroid, transform) in query.iter() {
         // An asteroid that leaves the screen never comes back, so drop it.
-        if out_of_bounds(transform.translation, asteroid.size.radius(), half_window) {
+        if out_of_bounds(&transform.translation, asteroid.size.radius(), half_window) {
             commands.entity(entity).despawn();
         }
     }
