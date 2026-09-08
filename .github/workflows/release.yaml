@@ -224,7 +224,7 @@ jobs:
             -o dist/build/opt.wasm \
             dist/build/${{ env.GAME_EXECUTABLE_NAME }}_bg.wasm
           mv dist/build/opt.wasm dist/build/${{ env.GAME_EXECUTABLE_NAME }}_bg.wasm
-          cp web/index.html dist/build/${{ env.GAME_EXECUTABLE_NAME }}_bg.wasm
+          cp web/index.html dist/index.html
           cp -r assets dist/assets
           touch dist/.nojekyll
       - name: Deploy
