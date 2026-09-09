@@ -3,7 +3,7 @@
 use crate::explosion::*;
 
 /// How long an explosion expands for before it is despawned, in seconds.
-const EXPLOSION_LIFETIME: f32 = 1.0;
+const EXPLOSION_LIFETIME: f32 = 1.5;
 
 /// Grows each explosion ring and despawns it once it has outlived its lifetime.
 ///

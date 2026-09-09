@@ -5,6 +5,7 @@
 // Many bevy systems require >7 arguments, which is not allowed by clippy.
 #![allow(clippy::too_many_arguments)]
 
+pub mod alien;
 pub mod asteroid;
 pub mod audio;
 pub mod bullet;
@@ -18,7 +19,7 @@ use bevy::{
 };
 
 use crate::{
-    asteroid::AsteroidPlugin, audio::GameAudioPlugin, bullet::BulletPlugin,
+    alien::AlienPlugin, asteroid::AsteroidPlugin, audio::GameAudioPlugin, bullet::BulletPlugin,
     explosion::ExplosionPlugin, ship::ShipPlugin, ui::GameUiPlugin,
 };
 
@@ -48,6 +49,7 @@ impl Plugin for AsteroidsPlugin {
             // asteroids and heal the player.
             .insert_resource(Time::<Fixed>::from_seconds(0.5))
             .add_plugins((
+                AlienPlugin,
                 AsteroidPlugin,
                 BulletPlugin,
                 ExplosionPlugin,
